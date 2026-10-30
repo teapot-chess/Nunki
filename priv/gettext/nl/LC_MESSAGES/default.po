@@ -70,7 +70,7 @@ msgstr "Aftellen"
 msgid "Dismiss"
 msgstr "Sluiten"
 
-#: lib/nunki_web/live/control_live.ex:808
+#: lib/nunki_web/live/control_live.ex:810
 #, elixir-autogen, elixir-format
 msgid "Don't ask again"
 msgstr "Niet meer vragen"
