@@ -41,7 +41,8 @@ defmodule Nunki.Store do
     "language" => "follow",
     "voices" => %{},
     "read_on_publish" => true,
-    "update_check" => "ask"
+    "update_check" => "ask",
+    "advanced" => false
   }
 
   def start_link(opts \\ []) do
@@ -235,7 +236,40 @@ defmodule Nunki.Store do
     # between a join and the next start, and the release check in CI looks
     # for the file.
     if fresh?, do: write(path, data)
-    data
+
+    # A box from before the setting existed: advanced is decided once, from
+    # what it already uses, and written down so it never flips on its own.
+    if not fresh? and not Map.has_key?(data["settings"], "advanced") do
+      data = put_in(data, ["settings", "advanced"], uses_advanced?(data))
+      write(path, data)
+      data
+    else
+      data
+    end
+  end
+
+  @doc false
+  # True when the file holds a value that only an advanced feature sets:
+  # a chosen voice, update checks switched off, a renamed device, or a
+  # tournament with its own room or announcer name. Nobody loses what they use.
+  def uses_advanced?(data) do
+    settings = data["settings"] || %{}
+    device_name = data["device_name"]
+
+    voices? = (settings["voices"] || %{}) != %{}
+    updates_off? = settings["update_check"] == "never"
+    renamed? = is_binary(device_name) and device_name != hostname()
+
+    tournament? =
+      Enum.any?(Map.values(data["tournaments"] || %{}), fn t ->
+        announcer = t["announcer"] || %{}
+        room = announcer["room"]
+        name = announcer["name"]
+
+        (is_binary(room) and room != "") or (is_binary(name) and name != device_name)
+      end)
+
+    voices? or updates_off? or renamed? or tournament?
   end
 
   defp save(state, data) do

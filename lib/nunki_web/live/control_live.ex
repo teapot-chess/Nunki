@@ -65,6 +65,7 @@ defmodule NunkiWeb.ControlLive do
       install_kind: Updates.install_kind(),
       autostart?: Autostart.supported?() and Autostart.enabled?(),
       speech_form: speech_form(settings),
+      advanced?: settings["advanced"] == true,
       device_form: to_form(%{"name" => Store.device_name()}, as: :device)
     )
     |> stream(:tournaments, rows, reset: true)
@@ -260,6 +261,11 @@ defmodule NunkiWeb.ControlLive do
     {:noreply, load(socket)}
   end
 
+  def handle_event("advanced", params, socket) do
+    Store.put_setting("advanced", params["on"] == "true")
+    {:noreply, load(socket)}
+  end
+
   def handle_event("test_voice", %{"lang" => lang}, socket) when lang in ["en", "nl"] do
     Speaker.say([Script.test_line(lang)], lang)
     {:noreply, socket}
@@ -424,6 +430,7 @@ defmodule NunkiWeb.ControlLive do
             </div>
 
             <.form
+              :if={@advanced?}
               for={t.settings_form}
               id={"#{dom_id}-settings"}
               class="inline-form t-settings"
@@ -576,7 +583,7 @@ defmodule NunkiWeb.ControlLive do
       <section id="speech-panel" class="panel">
         <header class="panel-head">
           <h2>{gettext("How Nunki speaks")}</h2>
-          <.button id="refresh-voices" variant="ghost" phx-click="refresh_voices">
+          <.button :if={@advanced?} id="refresh-voices" variant="ghost" phx-click="refresh_voices">
             {gettext("Look for voices again")}
           </.button>
         </header>
@@ -599,7 +606,7 @@ defmodule NunkiWeb.ControlLive do
             label={gettext("Read the pairings when they are published")}
           />
 
-          <div class="voice-row">
+          <div :if={@advanced?} class="voice-row">
             <.input
               :if={@voices_en != []}
               field={@speech_form[:voice_en]}
@@ -615,7 +622,7 @@ defmodule NunkiWeb.ControlLive do
             </.button>
           </div>
 
-          <div class="voice-row">
+          <div :if={@advanced?} class="voice-row">
             <.input
               :if={@voices_nl != []}
               field={@speech_form[:voice_nl]}
@@ -631,7 +638,7 @@ defmodule NunkiWeb.ControlLive do
             </.button>
           </div>
 
-          <p class="note" id="engine">
+          <p :if={@advanced? or is_nil(@engine)} class="note" id="engine">
             <%= if @engine do %>
               {gettext("Speech engine: %{engine}.", engine: @engine)}
             <% else %>
@@ -641,7 +648,7 @@ defmodule NunkiWeb.ControlLive do
         </.form>
       </section>
 
-      <section id="device-panel" class="panel">
+      <section :if={@advanced?} id="device-panel" class="panel">
         <header class="panel-head">
           <h2>{gettext("This device")}</h2>
         </header>
@@ -684,6 +691,24 @@ defmodule NunkiWeb.ControlLive do
             <span>{gettext("Start Nunki when Windows starts")}</span>
           </label>
         </div>
+      </section>
+
+      <section id="advanced-panel" class="panel">
+        <label class="check" for="advanced-toggle">
+          <input
+            id="advanced-toggle"
+            type="checkbox"
+            checked={@advanced?}
+            phx-click="advanced"
+            phx-value-on={to_string(!@advanced?)}
+          />
+          <span>{gettext("Show advanced features")}</span>
+        </label>
+        <p class="note">
+          {gettext(
+            "Choosing voices, testing them, name and room per tournament, this device's name and the update options. Off keeps this page small; none of it stops working."
+          )}
+        </p>
       </section>
     </Layouts.app>
     """
@@ -777,7 +802,9 @@ defmodule NunkiWeb.ControlLive do
           variant="ghost"
           phx-click="update_never"
           data-confirm={
-            gettext("Stop looking for new versions? You can switch it on again under This device.")
+            gettext(
+              "Stop looking for new versions? You can switch it on again under This device, once advanced features are shown."
+            )
           }
         >
           {gettext("Don't ask again")}

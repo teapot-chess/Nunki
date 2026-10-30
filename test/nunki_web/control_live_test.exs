@@ -60,6 +60,8 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   describe "name and room" do
+    setup do: Store.put_setting("advanced", true)
+
     test "with the line down the fields are disabled, and asking is refused" do
       id = tournament()
       {:ok, view, _html} = live(build_conn(), "/")
@@ -122,6 +124,8 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   describe "room choice" do
+    setup do: Store.put_setting("advanced", true)
+
     defp joined_with(frame) do
       server = FakeServer.start()
       FakeServer.set(server, :on_welcome, [Map.put(frame, "type", "settings")])
@@ -218,6 +222,7 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   test "the language override, the voice and read-on-publish are kept" do
+    Store.put_setting("advanced", true)
     {:ok, view, _html} = live(build_conn(), "/")
 
     view
@@ -233,6 +238,7 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   test "Test voice speaks the test line in that language (with the fake)" do
+    Store.put_setting("advanced", true)
     {:ok, view, _html} = live(build_conn(), "/")
     view |> element("#test-voice-nl") |> render_click()
     eventually(fn -> Fake.texts() == ["Zo klinkt de omroep in deze zaal."] end)
@@ -323,5 +329,56 @@ defmodule NunkiWeb.ControlLiveTest do
     assert redirected_to(conn) == "/"
     {:ok, _view, html} = live(recycle(conn), "/")
     assert html =~ "Toernooien"
+  end
+
+  describe "advanced features" do
+    @advanced ~w(#test-voice-en #test-voice-nl #refresh-voices #device-panel)
+
+    test "off by default: the page is small, the basics stay" do
+      id = tournament(payload(1))
+      {:ok, view, _html} = live(build_conn(), "/")
+
+      for sel <- @advanced, do: refute(has_element?(view, sel), sel)
+      refute has_element?(view, "#speech-form select[name='speech[voice_en]']")
+      refute has_element?(view, "#tournaments-#{id}-settings")
+
+      for sel <- ~w(#speaker #stop #join-form #speech-form #advanced-toggle) do
+        assert has_element?(view, sel), sel
+      end
+
+      assert has_element?(view, "#tournaments-#{id}-read")
+      assert has_element?(view, "#tournaments-#{id}-countdown-form")
+      assert has_element?(view, "#speech-form select[name='speech[language]']")
+      assert has_element?(view, "#speech-form input[name='speech[read_on_publish]']")
+      refute has_element?(view, "#advanced-toggle[checked]")
+    end
+
+    test "the switch shows and hides them, and is kept" do
+      id = tournament()
+      {:ok, view, _html} = live(build_conn(), "/")
+
+      view |> element("#advanced-toggle") |> render_click()
+      assert Store.setting("advanced") == true
+      for sel <- @advanced, do: assert(has_element?(view, sel), sel)
+      assert has_element?(view, "#tournaments-#{id}-settings")
+      assert has_element?(view, "#advanced-toggle[checked]")
+
+      view |> element("#advanced-toggle") |> render_click()
+      assert Store.setting("advanced") == false
+      for sel <- @advanced, do: refute(has_element?(view, sel), sel)
+    end
+
+    test "a chosen voice is still used while its picker is hidden" do
+      Store.put_setting("voices", %{"nl" => "Fake Vlaams"})
+      {:ok, view, _html} = live(build_conn(), "/")
+      refute has_element?(view, "#speech-form select[name='speech[voice_nl]']")
+      assert Store.setting("voices")["nl"] == "Fake Vlaams"
+    end
+
+    test "Dutch label" do
+      conn = post(build_conn(), "/locale", %{"locale" => "nl", "return_to" => "/"})
+      {:ok, _view, html} = live(recycle(conn), "/")
+      assert html =~ "Geavanceerde functies tonen"
+    end
   end
 end
