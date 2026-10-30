@@ -298,3 +298,36 @@ p { margin: 0.25rem 0; }
   .hall-boards .hb-black { grid-column: 2; }
 }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .95em; }
+
+/* ==== compact-screen: 3.5 inch panels (480x320 landscape, 320x480 portrait). Only inside this media query;
+   the big-screen layout above is untouched. ==== */
+@media (max-width: 520px), (max-height: 360px) {
+  body { font-size: 14px; line-height: 1.4; }
+  .frame { padding: 0 8px 24px; }
+  .top { gap: 4px 8px; padding: 4px 0; margin-bottom: 8px; flex-wrap: nowrap; }
+  .brand { font-size: 1rem; min-height: 44px; min-width: 44px; }
+  .nav { gap: 2px; flex-wrap: nowrap; }
+  .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; }
+  .language button { min-height: 44px; min-width: 44px; font-size: 0.85rem; }
+  .page { gap: 8px; }
+  .panel { padding: 10px 12px; }
+  .panel-head { margin-bottom: 8px; }
+  .btn { min-height: 44px; padding: 0 14px; }
+  .field input, .field select { min-height: 44px; }
+  .check { min-height: 44px; }
+  .check input { width: 1.6rem; height: 1.6rem; flex: none; }
+  .tournament { padding: 8px 10px; }
+  .banner { padding: 8px 10px; }
+  .banner-text { min-width: 0; }
+  .voice-row .field { min-width: 0; flex-basis: 100%; }
+  .speaker { flex-direction: column; align-items: stretch; }
+  .hall-fullscreen { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 360px) {
+  .brand span { display: none; }
+  .top { flex-wrap: wrap; }
+  .brand { flex: 1; }
+  .nav { order: 3; flex-basis: 100%; }
+  .nav a { flex: 1; justify-content: center; white-space: nowrap; padding: 0 6px; }
+}
+/* ==== end compact-screen ==== */
