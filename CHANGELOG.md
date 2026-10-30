@@ -15,6 +15,8 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Security] **Bandit 1.14.1.** Three fresh advisories against the old Bandit (HTTP/2 header blocks that unfold into unbounded allocations, quadratic work on blocked streams, WebSocket frames after a close) turned the dependency audit red. Updated, with `plug_crypto` 2.2.1 riding along; the audit is green. Nunki never spoke HTTP/2 to anybody, but the audit does not grade on intent.
+
 - [Change] **The control page fits a 3.5 inch screen.** A Nunki box with a 480x320 panel (or 320x480 upright) showed the control page as a desktop one: a header that did not fit upright and pushed the page sideways, links and language buttons about 30 pixels tall, ticks the size of a comma. Under 520 pixels wide or 360 tall the margins, panels and type tighten and the nav links, language buttons, buttons, fields and ticks get 44 pixel targets; upright, the nav drops to its own row under the logo instead of leaving the screen. The hall screen already scaled itself and is unchanged. A bigger screen sees the same page it always did. `NunkiWeb.CompactCssTest`.
 
 ## [0.4.3] - 2026-10-21
