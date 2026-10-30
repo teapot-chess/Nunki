@@ -102,7 +102,7 @@ defmodule Nunki.Store do
   @impl true
   def init(opts) do
     path = Keyword.get_lazy(opts, :path, &Nunki.Paths.state_file/0)
-    {:ok, %{path: path, data: load(path)}}
+    {:ok, %{path: path, data: Nunki.Store.Advanced.derive(load(path), path)}}
   end
 
   @impl true
@@ -193,7 +193,7 @@ defmodule Nunki.Store do
   end
 
   def handle_call(:reload, _from, state) do
-    {:reply, :ok, %{state | data: load(state.path)}}
+    {:reply, :ok, %{state | data: Nunki.Store.Advanced.derive(load(state.path), state.path)}}
   end
 
   # --- the file -----------------------------------------------------------------
@@ -247,7 +247,7 @@ defmodule Nunki.Store do
     %{state | data: data}
   end
 
-  defp write(path, data) do
+  def write(path, data) do
     tmp = path <> ".tmp"
     File.mkdir_p!(Path.dirname(path))
 

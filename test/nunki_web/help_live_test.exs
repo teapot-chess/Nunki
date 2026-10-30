@@ -8,7 +8,7 @@ defmodule NunkiWeb.HelpLiveTest do
 
   @endpoint NunkiWeb.Endpoint
 
-  @sections ~w(what join speech hall voices update data trouble)
+  @sections ~w(what join speech hall voices update advanced data trouble)
 
   test "English" do
     {:ok, view, _html} = live(build_conn(), "/help")
