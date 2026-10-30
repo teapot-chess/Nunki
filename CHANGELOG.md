@@ -15,6 +15,10 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Security] **Bandit 1.14.1.** Three fresh advisories against the old Bandit (HTTP/2 header blocks that unfold into unbounded allocations, quadratic work on blocked streams, WebSocket frames after a close) turned the dependency audit red. Updated, with `plug_crypto` 2.2.1 riding along; the audit is green. Nunki never spoke HTTP/2 to anybody, but the audit does not grade on intent.
+
+- [Change] **The control page fits a 3.5 inch screen.** A Nunki box with a 480x320 panel (or 320x480 upright) showed the control page as a desktop one: a header that did not fit upright and pushed the page sideways, links and language buttons about 30 pixels tall, ticks the size of a comma. Under 520 pixels wide or 360 tall the margins, panels and type tighten and the nav links, language buttons, buttons, fields and ticks get 44 pixel targets; upright, the nav drops to its own row under the logo instead of leaving the screen. The hall screen already scaled itself and is unchanged. A bigger screen sees the same page it always did. `NunkiWeb.CompactCssTest`.
+
 ## [0.4.3] - 2026-10-21
 
 - [Change] **The Mac app is signed with a Developer ID and notarised by Apple.** Until now it was signed with nothing but good intentions, and every Mac that downloaded it asked the arbiter to override Gatekeeper by hand, which is a strange way to greet someone who just installed your software. The release workflow now signs every binary inside Nunki.app, hardened runtime and BEAM entitlements included, sends the bundle to Apple, staples the ticket and checks the verdict with `spctl` before the zip exists. A fork without the secrets still builds, with a warning, ad-hoc signed. The workflow can also be started by hand with *mac_only* to test all this without publishing anything.
