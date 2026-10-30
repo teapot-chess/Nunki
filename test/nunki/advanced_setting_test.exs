@@ -25,7 +25,7 @@ defmodule Nunki.AdvancedSettingTest do
   end
 
   test "a new box starts with advanced off" do
-    assert Store.setting("advanced") == false
+    refute Store.setting("advanced")
   end
 
   test "an old box with nothing custom stays off, and says so in the file" do
