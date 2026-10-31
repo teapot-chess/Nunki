@@ -81,6 +81,10 @@ defmodule NunkiWeb.HelpLive do
               Een aftelling, uit OpenPairings of van hier: op tien, vijf en één minuut, en op nul. Alleen de momenten die nog komen; wie op vijf minuten start, hoort geen tien.
             </li>
 
+            <li>
+              Een omroep, uit OpenPairings (of Manubrium) of van de knoppen op de bedieningspagina: stilte, telefoons uit, neem plaats, uitslagen inleveren, het arbiterbureau, of een zin die je zelf typt. Hij wordt meteen uitgesproken, in dezelfde taal als de rest, en anderhalve minuut bovenaan het zaalscherm getoond.
+            </li>
+
             <li>"Stop" zwijgt meteen en vergeet wat nog moest komen.</li>
           </ul>
 
@@ -253,6 +257,10 @@ defmodule NunkiWeb.HelpLive do
 
             <li>
               A countdown, from OpenPairings or from here: at ten, five and one minute, and at zero. Only the moments still ahead; start one at five minutes and there is no "ten".
+            </li>
+
+            <li>
+              An announcement, from OpenPairings (or Manubrium) or from the buttons on the control page: silence, phones off, take your seats, hand in results, the arbiter's desk, or a line you type yourself. It is said at once, in the same language as everything else, and shown at the top of the hall screen for a minute and a half.
             </li>
 
             <li>"Stop" is quiet at once and forgets what was still to come.</li>

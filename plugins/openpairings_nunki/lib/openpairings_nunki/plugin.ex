@@ -14,6 +14,7 @@ defmodule OpenPairingsNunki.Plugin do
 
   use Gettext, backend: OpenPairingsNunki.Gettext
 
+  alias OpenPairingsNunki.Hall
   alias PairingsEngine.Features
   alias PairingsEngine.Tournaments.Tournament
 
@@ -99,6 +100,59 @@ defmodule OpenPairingsNunki.Plugin do
     ]
   end
 
+  # Manubrium's hall page (OpenPairings' `HallController`): who is online,
+  # and the countdown and announcements it may send. `nil` while the feature
+  # is off for the tournament owner's account.
+  @impl true
+  def hall_status(scope, %Tournament{} = t) do
+    if Hall.feature_on?(t) do
+      %{
+        app: "nunki",
+        devices:
+          for a <- Hall.list_announcers(scope, t) do
+            %{
+              id: a.id,
+              name: a.name,
+              room: Hall.room_label(t, a),
+              online: Hall.online?(a),
+              last_seen_at: a.last_seen_at
+            }
+          end,
+        countdown: countdown_status(t)
+      }
+    end
+  end
+
+  defp countdown_status(t) do
+    case Hall.current_countdown(t.id) do
+      nil -> nil
+      cd -> %{round: cd.round, seconds_left: Hall.seconds_left(cd)}
+    end
+  end
+
+  @impl true
+  def hall_command(scope, %Tournament{} = t, command) do
+    if Hall.feature_on?(t), do: run_command(scope, t, command), else: :unsupported
+  end
+
+  defp run_command(scope, t, {:announce, canned, text}) do
+    Hall.announce(scope, t, canned, text)
+  end
+
+  defp run_command(scope, t, {:countdown, minutes}) do
+    with {:ok, _cd} <- Hall.start_countdown(scope, t, minutes) do
+      {:ok, Hall.online_count(scope, t)}
+    end
+  end
+
+  defp run_command(scope, t, :cancel_countdown) do
+    case Hall.cancel_countdown(scope, t) do
+      :ok -> {:ok, Hall.online_count(scope, t)}
+      {:error, :none} -> {:ok, 0}
+    end
+  end
+
+  defp run_command(_scope, _t, _other), do: :unsupported
   @impl true
   def migrations_path, do: Path.expand("../../priv/migrations", __DIR__)
 end

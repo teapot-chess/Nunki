@@ -14,7 +14,7 @@ defmodule Nunki.Contracts.HallLinkTest do
 
   # The frames a server sends an announcer; Polis's are not ours to take.
   @server_frames ~w(server-welcome server-settings-nunki server-round server-countdown
-                    server-countdown-cancel server-read server-stop server-pong)
+                    server-countdown-cancel server-read server-stop server-pong server-announce)
 
   defp joined(opts \\ []) do
     server = FakeServer.start()

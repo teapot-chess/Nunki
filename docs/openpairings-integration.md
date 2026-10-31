@@ -13,7 +13,7 @@ and three tables of its own.
 | Path                        | What                                                              |
 |-----------------------------|-------------------------------------------------------------------|
 | `/p/nunki`                  | Every announcer of every tournament the account can open          |
-| `/p/nunki/tournaments/:id`  | One tournament's announcers: add, remove, name and room, countdown, read, stop |
+| `/p/nunki/tournaments/:id`  | One tournament's announcers: add, remove, name and room, countdown, read, stop, announce |
 | `POST /p/nunki/join/:code`  | A hall PC spending its one-time join code (JSON in, JSON out)     |
 | `GET /p/nunki/link`         | The announcer's WebSocket (hall-link-v1)                          |
 
@@ -177,6 +177,10 @@ wrong, the QR code is wrong in the same way.
   `"rating": 0`.
 - Team tournaments send their board pairings as the core lists them, which
   is a limit, not a design.
+- `announce` goes to every announcer of the tournament that is online, and
+  is not kept for the ones that are not: an announcement is for the room
+  as it is now. `Hall.announce/4` and `hall_command/3` (Manubrium) both
+  answer how many announcers it went to.
 - The countdown is always for the latest published round. Starting one
   replaces the one that runs. An announcer that connects mid-countdown is
   told the seconds that are left; one that connects after it ran out is
@@ -185,6 +189,21 @@ wrong, the QR code is wrong in the same way.
   one that is offline is told `refused revoked` when it next calls. Joining
   the same device again with a new code gives it its row back with a new
   key.
+
+## Manubrium (the plugin's second job)
+
+OpenPairings' `PairingsEngine.Plugin` has two optional hooks for the hall
+apps, and this plugin answers both. `hall_status/2` lists the tournament's
+announcers (online or not) and the countdown that runs, or `nil` while the
+feature is off for the owner's account. `hall_command/3` takes
+`{:announce, canned, text}`, `{:countdown, minutes}` and `:cancel_countdown`
+and answers `{:ok, sent_to}`, the announcers that are online; a countdown
+with no published round is `{:error, :no_round}`, cancelling one that is not
+running is `{:ok, 0}`, and `{:print, _}` is `:unsupported` (that is Polis's).
+The Manubrium app reaches them through the core's `/hall` routes
+(`manubrium-v1`); the frames they produce are `hall-link-v1`'s. Countdowns
+may now be 1, 2, 5, 10, 15, 20 or 30 minutes, which is exactly the list the
+contract allows.
 
 ## Tests
 

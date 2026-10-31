@@ -10,7 +10,7 @@ defmodule Nunki.Link do
   2. Say `status` (the voice, whether it is speaking) after the welcome and
      whenever either changes.
   3. Listen: `round` goes to `Nunki.Announcer`, `countdown` and
-     `countdown_cancel` to `Nunki.Countdown`, `read` and `stop` to the
+     `countdown_cancel` to `Nunki.Countdown`, `announce` to the announcer, `read` and `stop` to the
      announcer and the speaker.
   4. `settings` is kept as the server says it: the server is the truth, so
      a change made here (`send_settings/2`) is only a request, shown once
@@ -339,6 +339,11 @@ defmodule Nunki.Link do
   defp message(%{"type" => "read"} = read, state) do
     round = if is_integer(read["round"]), do: read["round"], else: nil
     Announcer.read(state.tournament, round)
+    state
+  end
+
+  defp message(%{"type" => "announce"} = announce, state) do
+    Announcer.announce(state.tournament, announce)
     state
   end
 

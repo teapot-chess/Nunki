@@ -75,4 +75,22 @@ defmodule NunkiWeb.HallLiveTest do
     Speaker.say(["Board 1: one against another."], "en")
     eventually(fn -> has_element?(view, "#hall-line") end)
   end
+
+  test "an announcement is on the screen while it is news" do
+    id = tournament("Open A", payload(3))
+    {:ok, view, _html} = live(build_conn(), "/hall")
+    refute has_element?(view, "#hall-announcement")
+
+    Nunki.Announcer.announce(id, %{"id" => "x1", "text" => "Tea at four."})
+    eventually(fn -> has_element?(view, "#hall-announcement", "Tea at four.") end)
+
+    # An old one is not shown.
+    Store.update_tournament(
+      id,
+      &put_in(&1, ["announcement", "at"], System.os_time(:second) - 600)
+    )
+
+    {:ok, view, _html} = live(build_conn(), "/hall")
+    refute has_element?(view, "#hall-announcement")
+  end
 end

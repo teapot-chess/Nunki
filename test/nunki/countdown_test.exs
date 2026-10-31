@@ -122,6 +122,6 @@ defmodule Nunki.CountdownTest do
   end
 
   test "the minutes the control page offers" do
-    assert Countdown.local_choices() == [1, 2, 5, 10, 15]
+    assert Countdown.local_choices() == [1, 2, 5, 10, 15, 20, 30]
   end
 end

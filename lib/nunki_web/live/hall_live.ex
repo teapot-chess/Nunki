@@ -54,10 +54,11 @@ defmodule NunkiWeb.HallLive do
       rounds: payload && payload["rounds"],
       has_boards?: payload != nil and (payload["boards"] || []) != [],
       countdown: countdown,
+      announcement: recent_announcement(t),
       speaker: speaker_status()
     )
     |> stream(:boards, (payload && payload["boards"]) || [], reset: true)
-    |> tick(countdown != nil)
+    |> tick(countdown != nil or announcement_recent?(t))
   end
 
   # The asked-for tournament; else the one with a countdown still to run,
@@ -68,6 +69,23 @@ defmodule NunkiWeb.HallLive do
       Enum.find(tournaments, &Map.has_key?(countdowns, &1["id"])) ||
       List.first(tournaments)
   end
+
+  @announcement_show_s 90
+
+  # The last announcement, while it is news: a minute and a half.
+  defp recent_announcement(nil), do: nil
+
+  defp recent_announcement(t) do
+    case t["announcement"] do
+      %{"text" => text, "at" => at} when is_integer(at) ->
+        if System.os_time(:second) - at <= @announcement_show_s, do: text
+
+      _none ->
+        nil
+    end
+  end
+
+  defp announcement_recent?(t), do: recent_announcement(t) != nil
 
   defp speaker_status do
     Speaker.status()
@@ -118,6 +136,10 @@ defmodule NunkiWeb.HallLive do
             }
           </script>
         </header>
+
+        <p :if={@announcement} id="hall-announcement" class="hall-announcement" role="alert">
+          {@announcement}
+        </p>
 
         <%= cond do %>
           <% @countdown && !@countdown.started? -> %>

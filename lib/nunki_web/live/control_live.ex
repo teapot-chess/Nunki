@@ -99,6 +99,7 @@ defmodule NunkiWeb.ControlLive do
         rounds: payload && payload["rounds"],
         boards: payload && length(payload["boards"] || []),
         countdown: Countdown.get(t["id"]),
+        announcement: get_in(t, ["announcement", "text"]),
         announcer_name: announcer["name"],
         announcer_room: announcer["room"] || "",
         room_options: room_options(announcer, values["room"]),
@@ -237,6 +238,23 @@ defmodule NunkiWeb.ControlLive do
       _no ->
         {:noreply,
          put_flash(socket, :error, gettext("No pairings yet: nothing to count down to."))}
+    end
+  end
+
+  def handle_event("announce_canned", %{"tournament" => id, "canned" => canned}, socket)
+      when canned in ["silence", "phones", "seats", "results", "arbiter"] do
+    Announcer.announce(id, %{"id" => Announcer.new_announcement_id(), "canned" => canned})
+    {:noreply, load(socket)}
+  end
+
+  def handle_event(
+        "announce_text",
+        %{"announce" => %{"tournament" => id, "text" => text}},
+        socket
+      ) do
+    case Announcer.announce(id, %{"id" => Announcer.new_announcement_id(), "text" => text}) do
+      :nothing -> {:noreply, put_flash(socket, :error, gettext("Type what to announce."))}
+      _said -> {:noreply, load(socket)}
     end
   end
 
@@ -515,6 +533,42 @@ defmodule NunkiWeb.ControlLive do
               <% end %>
             </div>
 
+            <div class="t-announce" id={"#{dom_id}-announce"}>
+              <p :if={t.announcement} id={"#{dom_id}-last-announcement"} class="note">
+                {gettext("Last announcement: %{text}", text: t.announcement)}
+              </p>
+              <div class="t-actions">
+                <.button
+                  :for={key <- Nunki.Script.canned_keys()}
+                  id={"#{dom_id}-canned-#{key}"}
+                  variant="ghost"
+                  phx-click="announce_canned"
+                  phx-value-tournament={t.id}
+                  phx-value-canned={key}
+                >
+                  {canned_label(key)}
+                </.button>
+              </div>
+              <form
+                id={"#{dom_id}-announce-form"}
+                class="inline-form"
+                phx-submit="announce_text"
+              >
+                <input type="hidden" name="announce[tournament]" value={t.id} />
+                <.input
+                  id={"#{dom_id}-announce-text"}
+                  type="text"
+                  name="announce[text]"
+                  value=""
+                  label={gettext("Announce")}
+                  maxlength="300"
+                />
+                <.button id={"#{dom_id}-announce-send"} type="submit" icon="play">
+                  {gettext("Say it")}
+                </.button>
+              </form>
+            </div>
+
             <div class="t-actions">
               <.button
                 id={"#{dom_id}-read"}
@@ -713,6 +767,12 @@ defmodule NunkiWeb.ControlLive do
     </Layouts.app>
     """
   end
+
+  defp canned_label("silence"), do: gettext("Silence")
+  defp canned_label("phones"), do: gettext("Phones off")
+  defp canned_label("seats"), do: gettext("Take your seats")
+  defp canned_label("results"), do: gettext("Hand in results")
+  defp canned_label("arbiter"), do: gettext("Arbiter's desk")
 
   defp minute_options do
     for m <- Countdown.local_choices(),

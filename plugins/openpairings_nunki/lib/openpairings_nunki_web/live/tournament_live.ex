@@ -44,6 +44,7 @@ defmodule OpenPairingsNunkiWeb.TournamentLive do
        latest_round: 0,
        announcers_count: 0,
        drafts: %{},
+       announce_form: to_form(%{"text" => ""}, as: :announce),
        countdown_form:
          to_form(%{"minutes" => to_string(Hall.default_countdown_minutes())}, as: :countdown)
      )}
@@ -163,6 +164,15 @@ defmodule OpenPairingsNunkiWeb.TournamentLive do
     end
   end
 
+  def handle_event("announce_canned", %{"canned" => canned}, socket) do
+    announce(socket, canned, nil)
+  end
+
+  def handle_event("announce_text", %{"announce" => %{"text" => text} = params}, socket) do
+    socket = assign(socket, announce_form: to_form(params, as: :announce))
+    announce(socket, nil, text)
+  end
+
   def handle_event("read", _params, socket) do
     case Hall.read_aloud(socket.assigns.current_scope, socket.assigns.tournament) do
       {:ok, n} ->
@@ -258,6 +268,28 @@ defmodule OpenPairingsNunkiWeb.TournamentLive do
           else: assign(socket, countdown: nil, seconds_left: 0)
     end
   end
+
+  defp announce(socket, canned, text) do
+    case Hall.announce(socket.assigns.current_scope, socket.assigns.tournament, canned, text) do
+      {:ok, n} ->
+        {:noreply,
+         socket
+         |> assign(
+           announce_form: to_form(%{"text" => ""}, as: :announce),
+           note: ngettext("Announced to 1 announcer.", "Announced to %{count} announcers.", n),
+           error: nil
+         )}
+
+      {:error, _empty} ->
+        {:noreply, assign(socket, error: gettext("Type what to announce."), note: nil)}
+    end
+  end
+
+  defp canned_label("silence"), do: gettext("Silence")
+  defp canned_label("phones"), do: gettext("Phones off")
+  defp canned_label("seats"), do: gettext("Take your seats")
+  defp canned_label("results"), do: gettext("Hand in results")
+  defp canned_label("arbiter"), do: gettext("Arbiter's desk")
 
   defp parse_minutes(text) when is_binary(text) do
     case Integer.parse(text) do
@@ -403,6 +435,36 @@ defmodule OpenPairingsNunkiWeb.TournamentLive do
                 </div>
               </.form>
             <% end %>
+
+            <div id="nunki-announce" class="actions" style="margin-top: 8px">
+              <button
+                :for={key <- Hall.canned()}
+                type="button"
+                class="pe-btn"
+                id={"nunki-canned-#{key}"}
+                phx-click="announce_canned"
+                phx-value-canned={key}
+              >
+                {canned_label(key)}
+              </button>
+            </div>
+
+            <.form
+              for={@announce_form}
+              id="nunki-announce-form"
+              phx-submit="announce_text"
+              style="margin-top: 8px"
+            >
+              <.input
+                field={@announce_form[:text]}
+                type="text"
+                label={gettext("Announce")}
+                maxlength="300"
+              />
+              <button type="submit" class="pe-btn primary" id="nunki-announce-send">
+                {gettext("Say it in the hall")}
+              </button>
+            </.form>
 
             <div class="actions" style="margin-top: 8px">
               <button

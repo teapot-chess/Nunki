@@ -214,6 +214,24 @@ defmodule NunkiWeb.ControlLiveTest do
     assert has_element?(view, "#tournaments-empty")
   end
 
+  test "announcing from the control page: a canned button and free text" do
+    id = tournament(payload(3))
+    {:ok, view, _html} = live(build_conn(), "/")
+    row = "#tournaments-#{id}"
+
+    view |> element("#{row}-canned-seats") |> render_click()
+    eventually(fn -> "Players, please take your seats." in Fake.texts() end)
+    assert has_element?(view, "#{row}-last-announcement")
+
+    view
+    |> form("#{row}-announce-form", %{
+      "announce" => %{"tournament" => id, "text" => "Tea at four."}
+    })
+    |> render_submit()
+
+    eventually(fn -> "Tea at four." in Fake.texts() end)
+  end
+
   test "Read now and the countdown need pairings first" do
     id = tournament()
     {:ok, view, _html} = live(build_conn(), "/")

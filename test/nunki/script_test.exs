@@ -72,4 +72,24 @@ defmodule Nunki.ScriptTest do
     assert Script.spoken(%{"spoken" => "", "name" => "X, Y"}) == "Y X"
     assert Script.spoken(nil) == "?"
   end
+
+  test "announcements: canned phrases in both languages, free text as it is" do
+    assert Script.announcement(%{"canned" => "phones"}, "en") ==
+             "Please switch off your mobile phones."
+
+    assert Script.announcement(%{"canned" => "silence"}, "nl") == "Stilte alstublieft."
+
+    for key <- Script.canned_keys() do
+      assert is_binary(Script.announcement(%{"canned" => key}, "en"))
+
+      assert Script.announcement(%{"canned" => key}, "nl") !=
+               Script.announcement(%{"canned" => key}, "en")
+    end
+
+    assert Script.announcement(%{"text" => "  Coffee is ready.  "}, "en") == "Coffee is ready."
+    # A phrase this Nunki does not know falls back to the text; with none, nothing.
+    assert Script.announcement(%{"canned" => "yodel", "text" => "Hello."}, "en") == "Hello."
+    assert Script.announcement(%{"canned" => "yodel"}, "en") == nil
+    assert Script.announcement(%{"text" => "   "}, "en") == nil
+  end
 end

@@ -22,7 +22,8 @@ The messages Nunki takes and sends are the contract's `join-*`,
 `device-hello`, `device-status-nunki`, `device-settings-nunki`,
 `device-leave`, and `server-welcome`, `server-refused`,
 `server-settings-nunki`, `server-round`, `server-countdown`,
-`server-countdown-cancel`, `server-read`, `server-stop`, `server-leave`.
+`server-countdown-cancel`, `server-read`, `server-stop`, `server-announce`,
+`server-leave`.
 What follows is what the schemas cannot say: what Nunki does with them.
 
 ## Joining
@@ -42,6 +43,18 @@ device. The code is taken as it comes, whatever its length.
 - `spoken` is what is said; without it, Nunki turns `name` round itself.
 - `locale` is the language, unless the control page says otherwise.
 - `stop` stops speaking and forgets the queue.
+
+## Announcements
+
+`announce` carries a `canned` key, free `text`, or both, and an `id` the
+server makes for each announcement. Nunki words a canned key in the
+announcement language (the tournament's, or the control page's override);
+a key it does not know falls back to `text`, and a frame with neither is
+ignored. An `id` equal to the last one Nunki saw for that tournament is a
+repeat and is not said again. What is said is also kept as the
+tournament's last announcement: the hall screen shows it for 90 seconds,
+the control page until the next one. The buttons and the text box on the
+control page do the same locally, with no server in between.
 
 ## Why seconds, not a time
 

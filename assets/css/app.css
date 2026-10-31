@@ -331,3 +331,15 @@ p { margin: 0.25rem 0; }
   .nav a { flex: 1; justify-content: center; white-space: nowrap; padding: 0 6px; }
 }
 /* ==== end compact-screen ==== */
+
+.hall-announcement {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  border: 2px solid currentColor;
+  font-size: clamp(1.5rem, 3.5vw, 3rem);
+  font-weight: 600;
+  text-align: center;
+}
+
+.t-announce { margin-block: 1rem; }
