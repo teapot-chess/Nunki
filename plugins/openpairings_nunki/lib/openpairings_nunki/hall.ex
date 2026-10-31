@@ -32,8 +32,10 @@ defmodule OpenPairingsNunki.Hall do
   alias PairingsEngine.{Features, Repo, Rooms, Tournaments}
   alias PairingsEngine.Tournaments.Tournament
 
-  @code_alphabet ~c"abcdefghijklmnopqrstuvwxyz234567"
-  @code_length 16
+  # hall-link-v1, "Pairing a device": 32 random bytes, base64url, the same
+  # code every hall app is paired with. Nobody types it, so it need not be
+  # short; it travels in a link, pasted or scanned.
+  @code_bytes 32
   @code_ttl_seconds 15 * 60
   @online_seconds 90
   @countdown_minutes [1, 2, 5, 10, 15]
@@ -111,11 +113,10 @@ defmodule OpenPairingsNunki.Hall do
   """
   def redeem_join_code(code, %{"device" => device} = attrs)
       when is_binary(code) and is_binary(device) do
-    hash = code |> String.downcase() |> sha256()
     now = now()
 
     Repo.transaction(fn ->
-      with %JoinCode{} = jc <- Repo.get_by(JoinCode, code_hash: hash) || {:error, :not_found},
+      with %JoinCode{} = jc <- find_code(code) || {:error, :not_found},
            :ok <- usable(jc, now),
            %Tournament{} = t <-
              Tournaments.get_tournament(jc.tournament_id) || {:error, :not_found},
@@ -129,6 +130,16 @@ defmodule OpenPairingsNunki.Hall do
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
+  end
+
+  # The code as it was given (base64url is case-sensitive); failing that,
+  # lowercased, for a 16-character base32 code made before the codes grew,
+  # which was case-blind and still lives out its fifteen minutes.
+  defp find_code(code) do
+    Repo.get_by(JoinCode, code_hash: sha256(code)) ||
+      if(String.downcase(code) != code,
+        do: Repo.get_by(JoinCode, code_hash: sha256(String.downcase(code)))
+      )
   end
 
   defp usable(%JoinCode{used_at: %DateTime{}}, _now), do: {:error, :used}
@@ -515,11 +526,8 @@ defmodule OpenPairingsNunki.Hall do
 
   defp sha256(text), do: :crypto.hash(:sha256, text)
 
-  defp random_code do
-    for <<b <- :crypto.strong_rand_bytes(@code_length)>>,
-      into: "",
-      do: <<Enum.at(@code_alphabet, rem(b, 32))>>
-  end
+  defp random_code,
+    do: :crypto.strong_rand_bytes(@code_bytes) |> Base.url_encode64(padding: false)
 
   defp random_key, do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
 

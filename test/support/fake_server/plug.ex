@@ -35,7 +35,7 @@ defmodule Nunki.FakeServer.Plug do
             "key" => key,
             "socket" => "/op/p/nunki/link",
             "server" => "fake",
-            "tournament" => %{"id" => "t-1", "name" => "Fake Open"}
+            "tournament" => %{"id" => 1, "name" => "Fake Open"}
           })
         )
 

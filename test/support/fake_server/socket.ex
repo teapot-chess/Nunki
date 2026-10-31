@@ -36,7 +36,13 @@ defmodule Nunki.FakeServer.Socket do
         {:push, {:text, Jason.encode!(%{"type" => "refused", "reason" => "key"})}, state}
 
       true ->
-        welcome = %{"type" => "welcome", "v" => 1, "tournament" => %{"name" => "Fake Open"}}
+        welcome = %{
+          "type" => "welcome",
+          "v" => 1,
+          "server" => "fake",
+          "tournament" => %{"id" => 1, "name" => "Fake Open"}
+        }
+
         frames = [welcome | server.on_welcome]
         {:push, Enum.map(frames, &{:text, Jason.encode!(&1)}), state}
     end

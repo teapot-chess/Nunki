@@ -31,3 +31,4 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view, enable_expensive_runtime_checks: true
 
 config :phoenix, sort_verified_routes_query_params: true
+config :ex_json_schema, :remote_schema_resolver, {Nunki.Contract, :resolve}

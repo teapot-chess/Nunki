@@ -13,7 +13,7 @@ defmodule Nunki.FakeServer do
       Agent.start_link(fn ->
         %{
           codes: MapSet.new(Keyword.get(opts, :codes, ["K7Q-4MD"])),
-          key: "fake-key-" <> Integer.to_string(System.unique_integer([:positive])),
+          key: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false),
           join_status: 200,
           joined: nil,
           frames: [],

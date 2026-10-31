@@ -1,8 +1,9 @@
 defmodule OpenPairingsNunkiWeb.LinkSocket do
   @moduledoc """
   The server end of an announcer's link (`WebSock`), one process per
-  connected announcer. The rules are the Nunki repository's
-  `docs/protocol.md`; the frames are `OpenPairingsNunki.Protocol`'s.
+  connected announcer. The rules are OpenPairings' hall-link-v1 contract
+  and the Nunki repository's `docs/protocol.md`; the frames are
+  `OpenPairingsNunki.Protocol`'s.
 
   The first frame must be `hello`, with the key in it. Until then nothing
   else is listened to, and a link that says nothing for ten seconds is

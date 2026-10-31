@@ -49,14 +49,14 @@ defmodule NunkiWeb.HelpLive do
             </li>
 
             <li>
-              Kopieer de link en plak hem op deze pagina in "Bij een toernooi aansluiten". Druk op Aansluiten.
+              Kopieer de link en plak hem op deze pagina in "Bij een toernooi aansluiten". Druk op Aansluiten. Staat OpenPairings op een ander toestel? Scan de QR-code met Manubrium op je telefoon: die herkent de link als een link voor Nunki en laat je hem kopiëren of delen naar deze pc.
             </li>
 
             <li>Het toernooi staat in de lijst. Een groene stip: de verbinding staat.</li>
           </ol>
 
           <p>
-            De link werkt één keer en vijftien minuten lang. Verlopen? Maak een nieuwe. Een link voor een printstation (Polis) werkt hier niet, en wordt geweigerd voor hij opgebruikt raakt.
+            De link werkt één keer en vijftien minuten lang. Verlopen? Maak een nieuwe. Een link voor een printstation (Polis) of voor de telefoon-app (Manubrium) werkt hier niet, en wordt geweigerd voor hij opgebruikt raakt. Een toernooi dat al gekoppeld is, blijft gekoppeld: de link is alleen nodig om aan te sluiten.
           </p>
 
           <p id="manual-room-nl">
@@ -222,13 +222,15 @@ defmodule NunkiWeb.HelpLive do
               In OpenPairings: the tournament's Settings → Hall announcer → "Add an announcer".
             </li>
 
-            <li>Copy the link and paste it into "Join a tournament" on this page. Press Join.</li>
+            <li>
+              Copy the link and paste it into "Join a tournament" on this page. Press Join. OpenPairings open on another device? Scan the QR code with Manubrium on your phone: it recognises the link as one for Nunki and lets you copy or share it to this PC.
+            </li>
 
             <li>The tournament is in the list. A green dot: the line is up.</li>
           </ol>
 
           <p>
-            The link works once, for fifteen minutes. Expired? Make a new one. A print station's link (Polis) does not work here, and is refused before it gets used up.
+            The link works once, for fifteen minutes. Expired? Make a new one. A print station's link (Polis) or the phone app's (Manubrium) does not work here, and is refused before it gets used up. A tournament already joined stays joined: the link is only needed to join.
           </p>
 
           <p id="manual-room-en">

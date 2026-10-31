@@ -2,8 +2,9 @@ defmodule OpenPairingsNunki.Protocol do
   @moduledoc """
   The hall-link protocol, version 1, server side: the frames this plugin
   sends an announcer, and reading the ones it sends back. JSON text
-  frames, each an object with a `"type"`. The rules are in the Nunki
-  repository's `docs/protocol.md`; this module only spells them.
+  frames, each an object with a `"type"`. The rules are OpenPairings'
+  `priv/contracts/hall-link-v1` (vendored in the Nunki repository), with
+  Nunki's own notes in its `docs/protocol.md`; this module only spells them.
   """
 
   @version 1

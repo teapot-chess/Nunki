@@ -5,12 +5,19 @@ name: CI
 # launcher - and the voice script's syntax, so that a Windows build that no
 # longer builds is found on the push that broke it and not on the day of a
 # release.
+#
+# And the hall link: the OpenPairings plugin in plugins/ tested where it
+# runs, inside an OpenPairings checkout, and the vendored contract
+# (priv/contracts/vendor/) compared with OpenPairings' own - on every push
+# and once a day, since OpenPairings moves without Nunki having a commit.
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "23 5 * * *"
 
 permissions:
   contents: read
@@ -22,6 +29,7 @@ concurrency:
 jobs:
   test:
     name: Build and test
+    if: github.event_name != 'schedule'
     # Named, not `ubuntu-latest`: that label moves, and it should move here
     # when somebody decides it does.
     runs-on: ubuntu-24.04
@@ -82,6 +90,7 @@ jobs:
 
   windows:
     name: Windows builds (launcher, voice script)
+    if: github.event_name != 'schedule'
     runs-on: windows-latest
 
     steps:
@@ -123,3 +132,90 @@ jobs:
         shell: pwsh
         run: |
           .\rel\windows\build_launcher.ps1 -OutputPath "$env:RUNNER_TEMP\Nunki.exe"
+
+  plugin:
+    name: OpenPairings plugin (hosted edition)
+    runs-on: ubuntu-24.04
+    env:
+      MIX_ENV: test
+      # The hosted edition compiles every plugin it finds in this directory
+      # together with the core; this repository's plugins/ holds exactly one.
+      PAIRINGS_EDITION: hosted
+      PAIRINGS_PLUGINS_DIR: ${{ github.workspace }}/hall/plugins
+      # OpenPairings' own CI skips these too: personal-data fixtures and a
+      # sibling checkout that are not here, and a 32-bit binary this runner
+      # cannot start. None of them is anything the plugin touches.
+      SKIP_MISSING_ARTIFACTS: swar_fixture,snapshot_fixtures,bbppairings
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: hall
+
+      # The server the plugin is built into, as it is on main today: a
+      # change there that breaks the plugin is found here the next morning.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: teapot-chess/openpairings
+          ref: main
+          path: openpairings
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: "1.20"
+          otp-version: "29.0"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            openpairings/deps
+            openpairings/_build
+          key: ${{ runner.os }}-mix-plugin-otp29.0-ex1.20-${{ hashFiles('openpairings/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-plugin-otp29.0-ex1.20-
+
+      - name: Install OpenPairings' dependencies
+        working-directory: openpairings
+        run: mix deps.get --check-locked
+
+      - name: Compile with the plugin
+        working-directory: openpairings
+        run: mix compile --warnings-as-errors
+
+      # OpenPairings' formatter knows the plugin's directory in this edition.
+      - name: Check the plugin's formatting
+        working-directory: openpairings
+        run: mix format --check-formatted
+
+      - name: Run the plugin's tests
+        working-directory: openpairings
+        run: mix test ../hall/plugins/openpairings_nunki/test
+
+  contracts:
+    name: Contracts match their providers
+    runs-on: ubuntu-24.04
+    env:
+      MIX_ENV: test
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: "1.20"
+          otp-version: "29.0"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-contracts-otp29.0-ex1.20-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-contracts-otp29.0-ex1.20-
+
+      - run: mix deps.get --check-locked
+
+      # Fetches OpenPairings' hall-link-v1 from GitHub and fails, naming the
+      # files, if it is not byte for byte the vendored copy. The fix is
+      # `mix contracts.sync`, the tests, and whatever they then say.
+      - name: Compare the vendored contracts with the providers'
+        run: mix contracts.check
