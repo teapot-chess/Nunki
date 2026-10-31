@@ -161,7 +161,7 @@ msgstr ""
 
 #: lib/openpairings_nunki_web/live/tournament_live.ex:421
 #, elixir-autogen, elixir-format
-msgid "Open Nunki on the hall PC, paste this link (or scan the code) and press Join. The link works once, until %{time}."
+msgid "Open Nunki on the hall PC, paste this link and press Join. Not at that PC? Scan the code with Manubrium on your phone, which passes the link on. It works once, until %{time}."
 msgstr ""
 
 #: lib/openpairings_nunki_web/live/tournament_live.ex:347

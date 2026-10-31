@@ -24,6 +24,12 @@ defmodule NunkiWeb.Words do
   def join_error(:not_a_link),
     do: gettext("That is not a join link. Copy the whole link from OpenPairings and try again.")
 
+  def join_error({:other_product, "manubrium"}),
+    do:
+      gettext(
+        "That link is for Manubrium, the phone app: scan it with the phone. For Nunki, make an announcer link in OpenPairings (the tournament's Settings → Hall announcer)."
+      )
+
   def join_error({:other_product, product}),
     do:
       gettext(

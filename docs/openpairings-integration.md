@@ -15,7 +15,7 @@ and three tables of its own.
 | `/p/nunki`                  | Every announcer of every tournament the account can open          |
 | `/p/nunki/tournaments/:id`  | One tournament's announcers: add, remove, name and room, countdown, read, stop |
 | `POST /p/nunki/join/:code`  | A hall PC spending its one-time join code (JSON in, JSON out)     |
-| `GET /p/nunki/link`         | The announcer's WebSocket (`docs/protocol.md`)                    |
+| `GET /p/nunki/link`         | The announcer's WebSocket (hall-link-v1)                          |
 
 The pages are for administrators only (the core's `:plugins`
 live_session). The plugin adds the feature `nunki_hall_announcer` (in the
@@ -31,7 +31,8 @@ link made before the switch-off is refused as expired) and at every `hello`
 lists the announcers with the feature off, and Remove still works).
 
 An announcer's name and room are kept in `nunki_announcers` and are the
-truth for both sides; see "Name and room" in `docs/protocol.md`.
+truth for both sides; see "Name and room" in `docs/protocol.md` and the
+`server-settings-nunki` schema of hall-link-v1.
 
 The room is one of the tournament's rooms (`PairingsEngine.Rooms`, made in
 the tournament's Settings, Rooms): `room_id` points at it, so a rename there
@@ -43,8 +44,10 @@ payload is cut per announcer; `rev` follows what is sent), and the
 `settings` frame lists the room names (`rooms_available`).
 
 The two plugs sit outside every pipeline (`http_routes/0`): no session,
-no CSRF token, no sign-in. The join code (16 characters, 80 random bits,
-fifteen minutes, one use) and then the device's key (32 random bytes,
+no CSRF token, no sign-in. The join code (32 random bytes, base64url, 43
+characters, fifteen minutes, one use: hall-link-v1's one pairing code for
+every hall app; a 16-character code made before it is still matched,
+case-blind, until it runs out) and then the device's key (32 random bytes,
 stored as its SHA-256, compared in constant time) are the only
 credentials. Refused join codes are rate-limited per client address in the
 core's `:board_link_auth` bucket, under keys of the plugin's own.
@@ -197,6 +200,14 @@ PAIRINGS_PLUGINS=openpairings_nunki \
 MIX_TEST_PARTITION=nunki \
   mix test "<nunki>/plugins/openpairings_nunki/test"
 ```
+
+CI does the same on every push and once a day (`.github/workflows/ci.yml`,
+job "OpenPairings plugin"): this repository and OpenPairings' `main` side by
+side, `PAIRINGS_PLUGINS_DIR` pointing at `plugins/`, compile with warnings
+as errors, the formatter, then `mix test ../hall/plugins/openpairings_nunki/test`.
+`contract_test.exs` holds every answer and frame the plugin sends to
+hall-link-v1, read from this repository's vendored copy
+(`OpenPairingsNunki.Contract`).
 
 The WebSocket handler's callbacks are driven directly, with the test
 process standing in for the socket; nothing listens on a port and nothing

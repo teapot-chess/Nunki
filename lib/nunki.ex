@@ -2,7 +2,7 @@ defmodule Nunki do
   @moduledoc """
   Nunki, the hall announcer: a round-start countdown on a full-screen page,
   and the pairings read aloud through the speakers of the machine it runs
-  on. OpenPairings tells it what to say (docs/protocol.md); the machine's
+  on. OpenPairings tells it what to say (hall-link-v1, see docs/protocol.md); the machine's
   own speech engine says it (`Nunki.Voice`).
 
       Nunki.Application

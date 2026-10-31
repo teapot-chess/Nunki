@@ -11,7 +11,7 @@ defmodule OpenPairingsNunkiWeb.JoinPlug do
       be. `429` - too many wrong codes from this address.
 
   No pipeline in front of it (`PairingsEngine.Plugin`, `http_routes/0`):
-  the code is the only credential, and it is 80 random bits that live for
+  the code is the only credential, and it is 256 random bits that live for
   fifteen minutes. The rate limit is there so a guesser pays for each
   guess anyway.
   """

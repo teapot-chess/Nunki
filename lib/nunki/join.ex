@@ -12,10 +12,12 @@ defmodule Nunki.Join do
 
   Anything before `/p/` is kept as it is, so OpenPairings behind a sub-path
   (`https://example.org/chess/p/nunki/join/...`) works. A print station's
-  link (`/p/polis/join/...`) is refused before anything is sent: the code
-  would be spent on the wrong device.
+  link (`/p/polis/join/...`) or a phone's (`manubrium://connect?...`) is
+  refused before anything is sent: the code would be spent on the wrong
+  device. The code itself is 43 characters of base64url, good once for
+  fifteen minutes; any code is taken as it comes (older links had 16).
 
-  Answers (docs/protocol.md): 200 with `key`, `socket`, `server`,
+  Answers (hall-link-v1, `join-response` and `join-error`): 200 with `key`, `socket`, `server`,
   `tournament`; 404 or 410 a code that is unknown, used or expired; 409 a
   protocol version the server does not speak; anything else is not an
   OpenPairings server.
@@ -79,21 +81,53 @@ defmodule Nunki.Join do
 
   @doc """
   The join link's parts: `{:ok, uri}`, `{:error, {:other_product, name}}`
-  for another hall program's link, or `{:error, :not_a_link}`.
+  for another hall app's link (a print station's `/p/polis/join/...`, or a
+  phone's `manubrium://connect?...`), or `{:error, :not_a_link}`. Nothing is
+  sent for any of the errors, so a code is never spent on the wrong device.
   """
   def parse(link) when is_binary(link) do
-    with {:ok, %URI{scheme: scheme, host: host, path: path} = uri}
-         when scheme in ["http", "https"] and is_binary(host) and host != "" and is_binary(path) <-
-           URI.new(String.trim(link)),
-         [_before, rest] <- split_last(path),
-         [product, "join", code] when code != "" <- String.split(rest, "/") do
-      if product == @product, do: {:ok, uri}, else: {:error, {:other_product, product}}
-    else
-      _other -> {:error, :not_a_link}
-    end
+    with {:ok, uri, _server, _code} <- read(link), do: {:ok, uri}
   end
 
   def parse(_other), do: {:error, :not_a_link}
+
+  @doc """
+  What a pairing link means (hall-link-v1, `pairing-link`): `{:ok, %{server,
+  code}}`, the server's base URL (anything before the last `/p/` included)
+  and the one-time code; or the errors of `parse/1`.
+  """
+  def pairing(link) when is_binary(link) do
+    with {:ok, _uri, server, code} <- read(link), do: {:ok, %{server: server, code: code}}
+  end
+
+  def pairing(_other), do: {:error, :not_a_link}
+
+  defp read(link) do
+    case URI.new(String.trim(link)) do
+      {:ok, %URI{scheme: "manubrium"}} ->
+        {:error, {:other_product, "manubrium"}}
+
+      {:ok, %URI{scheme: scheme, host: host, path: path} = uri}
+      when scheme in ["http", "https"] and is_binary(host) and host != "" and is_binary(path) ->
+        with [before, rest] <- split_last(path),
+             [product, "join", code] when code != "" <- String.split(rest, "/") do
+          if product == @product,
+            do: {:ok, uri, server(uri, before), code},
+            else: {:error, {:other_product, product}}
+        else
+          _other -> {:error, :not_a_link}
+        end
+
+      _other ->
+        {:error, :not_a_link}
+    end
+  end
+
+  defp server(uri, ""),
+    do: URI.to_string(%URI{scheme: uri.scheme, host: uri.host, port: uri.port})
+
+  defp server(uri, before),
+    do: URI.to_string(%URI{scheme: uri.scheme, host: uri.host, port: uri.port, path: before})
 
   # The LAST "/p/" in the path: a sub-path may itself contain one.
   defp split_last(path) do

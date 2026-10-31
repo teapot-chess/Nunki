@@ -15,6 +15,12 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Change] **The hall link is a contract now, not two essays.** The protocol between OpenPairings and Nunki was written out by hand here and again in Polis, and the two copies had started to disagree about things as basic as how long a join code is. It now lives once, as JSON Schemas in OpenPairings (`priv/contracts/hall-link-v1`), vendored here byte for byte. The tests hold every frame Nunki sends and every answer it takes to those schemas, the fake OpenPairings the other tests talk to included (it had been sending tournament ids no real server would). `docs/protocol.md` shrank to what the schemas cannot say. CI compares the vendored copy with OpenPairings on every pull request and once a day, so the next disagreement is found by a machine instead of by an announcer saying nothing.
+- [Change] **One pairing code for every hall app.** A new join link carries a 43-character code (32 random bytes) instead of 16 letters: the same code Polis and Manubrium are paired with, still good once, for fifteen minutes. Nobody types it, so the extra length costs nothing. A link made before the change works until it runs out, and an announcer already joined is not touched: its key was never a join code.
+- [Change] **A phone's link is turned away by name.** Pasting a Manubrium connect link (`manubrium://...`) into the control page now says it is for the phone app, before anything is sent, instead of calling it "not a join link" and leaving you to guess. In OpenPairings the announcer's QR code is now explained for what it is: scan it with Manubrium on your phone to pass the link on to the hall PC, which has no eyes of its own.
+- [Fix] **The OpenPairings plugin is tested in this repository's CI.** Its tests ran only when somebody remembered to run them inside an OpenPairings checkout, which is a schedule of sorts. A new job builds OpenPairings' `main` with the plugin in it, checks warnings and formatting, and runs the plugin's tests, on every push and every morning.
+- [Removed] **Build output under `plugins/`.** A `_build` directory of the plugin had been committed, translations and a migration included, in case anyone wanted two of each. Gone, and ignored from now on.
+
 ## [0.5.0] - 2026-10-30
 
 - [Security] **phoenix_html 4.4.0.** 4.3.0 picked up an advisory overnight (EEF-CVE-2026-117645, medium), and the dependency audit stopped the build, as it should.

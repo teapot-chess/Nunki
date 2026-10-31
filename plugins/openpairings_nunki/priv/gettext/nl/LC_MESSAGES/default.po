@@ -161,8 +161,8 @@ msgstr "Nunki draait op een pc met luidsprekers in de speelzaal. Het toont het a
 
 #: lib/openpairings_nunki_web/live/tournament_live.ex:421
 #, elixir-autogen, elixir-format
-msgid "Open Nunki on the hall PC, paste this link (or scan the code) and press Join. The link works once, until %{time}."
-msgstr "Open Nunki op de pc in de zaal, plak deze link (of scan de code) en druk op Koppelen. De link werkt één keer, tot %{time}."
+msgid "Open Nunki on the hall PC, paste this link and press Join. Not at that PC? Scan the code with Manubrium on your phone, which passes the link on. It works once, until %{time}."
+msgstr "Open Nunki op de pc in de zaal, plak deze link en druk op Koppelen. Niet aan die pc? Scan de code met Manubrium op je telefoon, die geeft de link door. Hij werkt één keer, tot %{time}."
 
 #: lib/openpairings_nunki_web/live/tournament_live.ex:347
 #, elixir-autogen, elixir-format

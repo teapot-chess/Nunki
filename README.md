@@ -16,8 +16,9 @@ is said out loud. Its own pages are a control page and a hall screen for a
 projector.
 
 Nunki is one of the hall programs beside OpenPairings: Alnasl reads the
-boards, Polis prints, Nunki speaks. They share a protocol
-([docs/protocol.md](docs/protocol.md)) and a habit of dialling out, so
+boards, Polis prints, Nunki speaks. They share a protocol, OpenPairings'
+[hall-link-v1](https://github.com/teapot-chess/openpairings/tree/main/priv/contracts/hall-link-v1)
+(Nunki's notes on it: [docs/protocol.md](docs/protocol.md)), and a habit of dialling out, so
 nothing in the hall's network has to be opened.
 
 ## Why the operating system speaks, not the browser
@@ -150,10 +151,16 @@ or use a machine without a desktop, where ALSA is the sound server.
 1. In OpenPairings (on pairings.cloud): the tournament's Settings → *Hall announcer* →
    "Add an announcer". A link appears, good once and for fifteen minutes.
 2. Paste it into "Join a tournament" on Nunki's control page, press Join.
+   OpenPairings open on another device than the hall PC? Scan the QR code
+   beside the link with Manubrium on your phone: it knows the link is for
+   Nunki and offers to copy or share it to the hall PC.
 3. The tournament is in the list with a green dot. From now on, a round
    published there is read here.
 
-A print station's link is refused before it is used up. One Nunki can join
+A print station's link, or the phone app's, is refused before it is used
+up. An announcer already joined stays joined; the link is only for joining.
+Pairing works the same way for every hall app; the rules are in OpenPairings'
+[hall-link-v1 contract](https://github.com/teapot-chess/openpairings/tree/main/priv/contracts/hall-link-v1). One Nunki can join
 several tournaments; each has its own line and its own countdown.
 
 Each tournament also gives this announcer a name and a room. OpenPairings

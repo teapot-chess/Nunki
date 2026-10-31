@@ -532,7 +532,7 @@ defmodule OpenPairingsNunkiWeb.TournamentLive do
           <div :if={@enabled? and @join} id="nunki-join" style="margin-top: 12px">
             <p class="hint">
               {gettext(
-                "Open Nunki on the hall PC, paste this link (or scan the code) and press Join. The link works once, until %{time}.",
+                "Open Nunki on the hall PC, paste this link and press Join. Not at that PC? Scan the code with Manubrium on your phone, which passes the link on. It works once, until %{time}.",
                 time: when_text(@join.expires_at)
               )}
             </p>
