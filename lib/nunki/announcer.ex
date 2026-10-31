@@ -87,6 +87,51 @@ defmodule Nunki.Announcer do
     Speaker.say([Script.milestone(which, round, lang)], lang, tournament: tournament_id)
   end
 
+  @doc """
+  Says an announcement now (the server's `announce`, or the control page's
+  buttons): `a` is `%{"id", "canned", "text"}`. Kept as the tournament's
+  last announcement for the hall screen and the control page; an `id` that
+  is the last one seen is a repeat and is not said again. `:said`,
+  `:repeat` or `:nothing`.
+  """
+  def announce(tournament_id, %{} = a) do
+    lang = language(tournament_id)
+    text = Script.announcement(a, lang)
+    id = to_string(a["id"] || "")
+
+    if is_nil(text) do
+      :nothing
+    else
+      result =
+        Store.update_tournament(tournament_id, fn t ->
+          if id != "" and get_in(t, ["announcement", "id"]) == id,
+            do: t,
+            else:
+              Map.put(t, "announcement", %{
+                "id" => id,
+                "text" => text,
+                "at" => System.os_time(:second)
+              })
+        end)
+
+      case result do
+        {:ok, %{"announcement" => %{"id" => ^id}}, _after} when id != "" ->
+          :repeat
+
+        {:ok, _before, _after} ->
+          Speaker.say([text], lang, tournament: tournament_id)
+          Nunki.broadcast({:announcement, tournament_id})
+          :said
+
+        :error ->
+          :nothing
+      end
+    end
+  end
+
+  @doc "A fresh announcement id."
+  def new_announcement_id, do: :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+
   defp speak_pairings(tournament_id, payload) do
     lang = language(tournament_id)
     Speaker.say(Script.pairings(payload, lang), lang, tournament: tournament_id)

@@ -193,6 +193,31 @@ defmodule Nunki.LinkTest do
     assert Speaker.status().queued == 0
   end
 
+  test "announce is said once, in the tournament's language, and kept for the screens" do
+    {server, id} = joined()
+
+    FakeServer.push(server, %{"type" => "round", "round" => payload(2, locale: "nl")})
+    eventually(fn -> "De indeling van ronde 2 is bekend." in Fake.texts() end)
+    Fake.reset()
+
+    frame = %{"type" => "announce", "id" => "a1", "canned" => "silence"}
+    FakeServer.push(server, frame)
+    eventually(fn -> "Stilte alstublieft." in Fake.texts() end)
+    assert %{"id" => "a1", "text" => "Stilte alstublieft."} = Store.tournament(id)["announcement"]
+
+    # The same id again (a frame delivered twice) is not said twice.
+    FakeServer.push(server, frame)
+
+    FakeServer.push(server, %{
+      "type" => "announce",
+      "id" => "a2",
+      "text" => "Boards 1-5 to the desk."
+    })
+
+    eventually(fn -> "Boards 1-5 to the desk." in Fake.texts() end)
+    assert Enum.count(Fake.texts(), &(&1 == "Stilte alstublieft.")) == 1
+  end
+
   test "speaking is reported to the server" do
     {server, _id} = joined()
     Fake.hold()

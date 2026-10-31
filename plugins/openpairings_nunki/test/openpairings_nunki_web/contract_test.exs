@@ -200,14 +200,16 @@ defmodule OpenPairingsNunkiWeb.ContractTest do
       :ok = Hall.cancel_countdown(scope, t)
       {:ok, _} = Hall.read_aloud(scope, t)
       :ok = Hall.stop_reading(scope, t)
+      {:ok, _} = Hall.announce(scope, t, "phones", nil)
+      {:ok, _} = Hall.announce(scope, t, nil, "Tea is served.")
 
       sent =
-        for _ <- 1..4 do
+        for _ <- 1..6 do
           assert_receive {:nunki_send, _} = message
           message |> then(&LinkSocket.handle_info(&1, state)) |> assert_frames!() |> frames()
         end
 
-      assert ["countdown", "countdown_cancel", "read", "stop"] =
+      assert ["countdown", "countdown_cancel", "read", "stop", "announce", "announce"] =
                sent |> List.flatten() |> Enum.map(& &1["type"])
     end
 

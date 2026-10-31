@@ -38,7 +38,7 @@ defmodule OpenPairingsNunki.Hall do
   @code_bytes 32
   @code_ttl_seconds 15 * 60
   @online_seconds 90
-  @countdown_minutes [1, 2, 5, 10, 15]
+  @countdown_minutes [1, 2, 5, 10, 15, 20, 30]
   @name_max 60
 
   @doc "The minutes a countdown may run for, as the page offers them."
@@ -241,7 +241,7 @@ defmodule OpenPairingsNunki.Hall do
   # Whether the account that owns `tournament` has the announcer switched on.
   # Asked at every join and every hello: an announcer is a way to receive the
   # tournament's rounds, so turning the feature off has to cut it off.
-  defp feature_on?(%Tournament{user_id: user_id}) do
+  def feature_on?(%Tournament{user_id: user_id}) do
     user = user_id && Repo.get(User, user_id)
     Features.enabled?(user, Plugin.feature())
   end
@@ -493,6 +493,40 @@ defmodule OpenPairingsNunki.Hall do
   @doc "The `countdown` frame for `cd` as of `now`."
   def countdown_frame(%Countdown{} = cd, now \\ now()),
     do: Protocol.countdown(cd.round, seconds_left(cd, now), cd.token)
+
+  ## ---------- announcing ----------
+
+  @canned ~w(silence phones seats results arbiter)
+  @text_max 300
+
+  @doc "The canned announcements, as the contract's `announce` names them."
+  def canned, do: @canned
+
+  @doc """
+  Says something in the hall now, on every announcer of the tournament that
+  is online: a `canned` phrase (the device words it in its own language),
+  free `text` (clipped to #{@text_max} characters), or both. `{:ok, sent_to}`
+  with the announcers it went to, `{:error, :empty}` when there is nothing
+  to say.
+  """
+  def announce(%Scope{} = scope, %Tournament{} = tournament, canned, text) do
+    tournament = authorize!(scope, tournament)
+    canned = if canned in @canned, do: canned
+    text = if is_binary(text), do: clip(text, @text_max)
+    text = if text == "", do: nil, else: text
+
+    if canned || text do
+      id = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+      broadcast(tournament.id, {:nunki_send, Protocol.announce(id, canned, text)})
+      {:ok, online_count(scope, tournament)}
+    else
+      {:error, :empty}
+    end
+  end
+
+  @doc "How many of the tournament's announcers are online now."
+  def online_count(%Scope{} = scope, %Tournament{} = tournament),
+    do: scope |> list_announcers(tournament) |> Enum.count(&online?/1)
 
   ## ---------- reading aloud ----------
 

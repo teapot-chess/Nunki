@@ -50,6 +50,17 @@ defmodule OpenPairingsNunki.Protocol do
 
   def stop, do: %{type: "stop"}
 
+  @doc """
+  Say this now. `canned` is one of `OpenPairingsNunki.Hall.canned/0` or nil,
+  `text` free text or nil; `id` is made per announcement so a frame delivered
+  twice is said once.
+  """
+  def announce(id, canned, text) do
+    %{type: "announce", id: id}
+    |> then(&if(canned, do: Map.put(&1, :canned, canned), else: &1))
+    |> then(&if(text, do: Map.put(&1, :text, text), else: &1))
+  end
+
   def pong, do: %{type: "pong"}
 
   @doc """

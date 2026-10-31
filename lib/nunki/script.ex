@@ -68,6 +68,37 @@ defmodule Nunki.Script do
     end)
   end
 
+  @canned ~w(silence phones seats results arbiter)
+
+  @doc "The canned announcements the contract knows (`announce`'s `canned`)."
+  def canned_keys, do: @canned
+
+  @doc """
+  What an `announce` says: the canned phrase `canned` in `locale`, or, when
+  there is none or this Nunki does not know it, the free `text` as it is.
+  `nil` when there is nothing to say.
+  """
+  def announcement(%{"canned" => canned}, locale) when canned in @canned do
+    with_locale(locale, fn ->
+      case canned do
+        "silence" -> dgettext("speech", "Silence, please.")
+        "phones" -> dgettext("speech", "Please switch off your mobile phones.")
+        "seats" -> dgettext("speech", "Players, please take your seats.")
+        "results" -> dgettext("speech", "Please hand in your results to the arbiter.")
+        "arbiter" -> dgettext("speech", "Please come to the arbiter's desk.")
+      end
+    end)
+  end
+
+  def announcement(%{"text" => text}, _locale) when is_binary(text) do
+    case String.trim(text) do
+      "" -> nil
+      text -> String.slice(text, 0, 300)
+    end
+  end
+
+  def announcement(_other, _locale), do: nil
+
   @doc "What \"Test voice\" says."
   def test_line(locale) do
     with_locale(locale, fn ->

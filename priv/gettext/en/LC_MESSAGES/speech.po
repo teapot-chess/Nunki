@@ -46,7 +46,32 @@ msgstr ""
 msgid "Round %{round} starts now. Please start the clocks."
 msgstr ""
 
-#: lib/nunki/script.ex:74
+#: lib/nunki/script.ex:105
 #, elixir-autogen, elixir-format
 msgid "This is how announcements in this hall will sound."
+msgstr ""
+
+#: lib/nunki/script.ex:86
+#, elixir-autogen, elixir-format
+msgid "Players, please take your seats."
+msgstr ""
+
+#: lib/nunki/script.ex:88
+#, elixir-autogen, elixir-format
+msgid "Please come to the arbiter's desk."
+msgstr ""
+
+#: lib/nunki/script.ex:87
+#, elixir-autogen, elixir-format
+msgid "Please hand in your results to the arbiter."
+msgstr ""
+
+#: lib/nunki/script.ex:85
+#, elixir-autogen, elixir-format
+msgid "Please switch off your mobile phones."
+msgstr ""
+
+#: lib/nunki/script.ex:84
+#, elixir-autogen, elixir-format
+msgid "Silence, please."
 msgstr ""

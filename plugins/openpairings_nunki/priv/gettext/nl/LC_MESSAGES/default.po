@@ -11,140 +11,140 @@ msgstr ""
 "Language: nl\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:216
+#: lib/openpairings_nunki_web/live/tournament_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "1 minute"
 msgid_plural "%{count} minutes"
 msgstr[0] "1 minuut"
 msgstr[1] "%{count} minuten"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:374
+#: lib/openpairings_nunki_web/live/tournament_live.ex:502
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Acties"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:415
+#: lib/openpairings_nunki_web/live/tournament_live.ex:585
 #, elixir-autogen, elixir-format
 msgid "Add an announcer"
 msgstr "Omroeper toevoegen"
 
-#: lib/openpairings_nunki/plugin.ex:82
+#: lib/openpairings_nunki/plugin.ex:96
 #, elixir-autogen, elixir-format
 msgid "Adds \"Hall announcer\" to a tournament's Settings: join a hall PC running Nunki, and it reads each round's pairings aloud and shows the countdown to the start of the round."
 msgstr "Voegt \"Omroeper\" toe aan de instellingen van een toernooi: koppel een pc in de zaal waarop Nunki draait, en die leest de paringen van elke ronde voor en toont het aftellen tot de start van de ronde."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:73
+#: lib/openpairings_nunki_web/live/tournament_live.ex:75
 #, elixir-autogen, elixir-format
 msgid "Announcer removed."
 msgstr "Omroeper verwijderd."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:357
+#: lib/openpairings_nunki_web/live/tournament_live.ex:485
 #, elixir-autogen, elixir-format
 msgid "Announcers"
 msgstr "Omroepers"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:128
+#: lib/openpairings_nunki_web/live/tournament_live.ex:188
 #, elixir-autogen, elixir-format
 msgid "Asked the announcers to stop."
 msgstr "De omroepers is gevraagd te stoppen."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:308
+#: lib/openpairings_nunki_web/live/tournament_live.ex:408
 #, elixir-autogen, elixir-format
 msgid "Cancel the countdown"
 msgstr "Aftellen annuleren"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:206
+#: lib/openpairings_nunki_web/live/tournament_live.ex:306
 #, elixir-autogen, elixir-format
 msgid "Choose one of the lengths offered."
 msgstr "Kies een van de aangeboden duren."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:442
+#: lib/openpairings_nunki_web/live/tournament_live.ex:612
 #, elixir-autogen, elixir-format
 msgid "Copied"
 msgstr "Gekopieerd"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:444
+#: lib/openpairings_nunki_web/live/tournament_live.ex:614
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr "Kopiëren"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:323
+#: lib/openpairings_nunki_web/live/tournament_live.ex:423
 #, elixir-autogen, elixir-format
 msgid "Countdown"
 msgstr "Aftellen"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:108
+#: lib/openpairings_nunki_web/live/tournament_live.ex:159
 #, elixir-autogen, elixir-format
 msgid "Countdown cancelled."
 msgstr "Aftellen geannuleerd."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:292
+#: lib/openpairings_nunki_web/live/tournament_live.ex:392
 #, elixir-autogen, elixir-format
 msgid "Countdown for round %{n}:"
 msgstr "Aftellen voor ronde %{n}:"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:95
+#: lib/openpairings_nunki_web/live/tournament_live.ex:146
 #, elixir-autogen, elixir-format
 msgid "Countdown started for round %{n}."
 msgstr "Aftellen gestart voor ronde %{n}."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:454
+#: lib/openpairings_nunki_web/live/tournament_live.ex:624
 #, elixir-autogen, elixir-format
 msgid "Done"
 msgstr "Klaar"
 
-#: lib/openpairings_nunki/plugin.ex:66
-#: lib/openpairings_nunki_web/live/tournament_live.ex:25
-#: lib/openpairings_nunki_web/live/tournament_live.ex:250
+#: lib/openpairings_nunki/plugin.ex:74
+#: lib/openpairings_nunki_web/live/tournament_live.ex:36
 #, elixir-autogen, elixir-format
 msgid "Hall announcer"
 msgstr "Omroeper"
 
-#: lib/openpairings_nunki/plugin.ex:32
-#: lib/openpairings_nunki/plugin.ex:80
+#: lib/openpairings_nunki/plugin.ex:33
+#: lib/openpairings_nunki/plugin.ex:94
 #: lib/openpairings_nunki_web/live/index_live.ex:25
 #: lib/openpairings_nunki_web/live/index_live.ex:45
 #, elixir-autogen, elixir-format
 msgid "Hall announcer (Nunki)"
 msgstr "Omroeper (Nunki)"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:370
+#: lib/openpairings_nunki_web/live/tournament_live.ex:498
 #, elixir-autogen, elixir-format
 msgid "Last seen"
 msgstr "Laatst gezien"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:285
+#: lib/openpairings_nunki_web/live/tournament_live.ex:385
 #, elixir-autogen, elixir-format
 msgid "Latest published round: %{n}."
 msgstr "Laatst gepubliceerde ronde: %{n}."
 
 #: lib/openpairings_nunki_web/live/index_live.ex:74
-#: lib/openpairings_nunki_web/live/tournament_live.ex:366
+#: lib/openpairings_nunki_web/live/tournament_live.ex:494
+#: lib/openpairings_nunki_web/live/tournament_live.ex:534
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Naam"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:360
+#: lib/openpairings_nunki_web/live/tournament_live.ex:488
 #, elixir-autogen, elixir-format
 msgid "No announcer has joined this tournament yet."
 msgstr "Er is nog geen omroeper aan dit toernooi gekoppeld."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:112
+#: lib/openpairings_nunki_web/live/tournament_live.ex:163
 #, elixir-autogen, elixir-format
 msgid "No countdown is running."
 msgstr "Er loopt geen aftelling."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:225
 #, elixir-autogen, elixir-format
 msgid "No room"
 msgstr "Geen ruimte"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:204
+#: lib/openpairings_nunki_web/live/tournament_live.ex:304
 #, elixir-autogen, elixir-format
 msgid "No round is published yet. Publish the pairings first."
 msgstr "Er is nog geen ronde gepubliceerd. Publiceer eerst de paringen."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:279
+#: lib/openpairings_nunki_web/live/tournament_live.ex:379
 #, elixir-autogen, elixir-format
 msgid "No round is published yet. The countdown and the reading aloud are for the latest published round."
 msgstr "Er is nog geen ronde gepubliceerd. Het aftellen en het voorlezen gelden voor de laatst gepubliceerde ronde."
@@ -159,110 +159,111 @@ msgstr "Nog geen. Open de instellingen van een toernooi, kies \"Omroeper\" en dr
 msgid "Nunki runs on a PC in the playing hall with speakers. It shows the countdown to the start of the round and reads the pairings aloud, and it hears about each round from here the moment the pairings are public."
 msgstr "Nunki draait op een pc met luidsprekers in de speelzaal. Het toont het aftellen tot de start van de ronde en leest de paringen voor, en het hoort hier van elke ronde zodra de paringen openbaar zijn."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:421
+#: lib/openpairings_nunki_web/live/tournament_live.ex:591
 #, elixir-autogen, elixir-format
 msgid "Open Nunki on the hall PC, paste this link and press Join. Not at that PC? Scan the code with Manubrium on your phone, which passes the link on. It works once, until %{time}."
 msgstr "Open Nunki op de pc in de zaal, plak deze link en druk op Koppelen. Niet aan die pc? Scan de code met Manubrium op je telefoon, die geeft de link door. Hij werkt één keer, tot %{time}."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:347
+#: lib/openpairings_nunki_web/live/tournament_live.ex:472
 #, elixir-autogen, elixir-format
 msgid "Read the pairings aloud"
 msgstr "De paringen voorlezen"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:119
+#: lib/openpairings_nunki_web/live/tournament_live.ex:179
 #, elixir-autogen, elixir-format
 msgid "Reading round %{n} aloud."
 msgstr "Ronde %{n} wordt voorgelezen."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:406
+#: lib/openpairings_nunki_web/live/tournament_live.ex:576
 #, elixir-autogen, elixir-format
 msgid "Remove"
 msgstr "Verwijderen"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:404
+#: lib/openpairings_nunki_web/live/tournament_live.ex:574
 #, elixir-autogen, elixir-format
 msgid "Remove this announcer? It forgets this tournament."
 msgstr "Deze omroeper verwijderen? Hij vergeet dit toernooi."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:372
+#: lib/openpairings_nunki_web/live/tournament_live.ex:500
 #, elixir-autogen, elixir-format
 msgid "Reports"
 msgstr "Gemeld"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:540
 #, elixir-autogen, elixir-format
 msgid "Room"
 msgstr "Ruimte"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:275
+#: lib/openpairings_nunki_web/live/tournament_live.ex:375
 #, elixir-autogen, elixir-format
 msgid "Round start"
 msgstr "Start van de ronde"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:544
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr "Opslaan"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:118
 #, elixir-autogen, elixir-format
 msgid "Saved."
 msgstr "Opgeslagen."
 
-#: lib/openpairings_nunki/plugin.ex:37
+#: lib/openpairings_nunki/plugin.ex:38
 #, elixir-autogen, elixir-format
 msgid "Sends each round's pairings to the announcers in the hall the moment they are public, and lets you start the round countdown and the reading aloud from here."
 msgstr "Stuurt de paringen van elke ronde naar de omroepers in de zaal zodra ze openbaar zijn, en laat je hier het aftellen en het voorlezen starten."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:352
 #, elixir-autogen, elixir-format
 msgid "Settings - Hall announcer"
 msgstr "Instellingen - Omroeper"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:333
+#: lib/openpairings_nunki_web/live/tournament_live.ex:433
 #, elixir-autogen, elixir-format
 msgid "Start the countdown"
 msgstr "Aftellen starten"
 
 #: lib/openpairings_nunki_web/live/index_live.ex:75
-#: lib/openpairings_nunki_web/live/tournament_live.ex:368
+#: lib/openpairings_nunki_web/live/tournament_live.ex:496
 #, elixir-autogen, elixir-format
 msgid "State"
 msgstr "Toestand"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:351
+#: lib/openpairings_nunki_web/live/tournament_live.ex:476
 #, elixir-autogen, elixir-format
 msgid "Stop reading"
 msgstr "Stoppen met voorlezen"
 
 #: lib/openpairings_nunki_web/live/index_live.ex:58
-#: lib/openpairings_nunki_web/live/tournament_live.ex:268
+#: lib/openpairings_nunki_web/live/tournament_live.ex:368
 #, elixir-autogen, elixir-format
 msgid "Switch it on in your settings."
 msgstr "Zet het aan in je instellingen."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:76
+#: lib/openpairings_nunki_web/live/tournament_live.ex:78
+#: lib/openpairings_nunki_web/live/tournament_live.ex:127
 #, elixir-autogen, elixir-format
 msgid "That announcer is already gone."
 msgstr "Die omroeper is al weg."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:124
 #, elixir-autogen, elixir-format
 msgid "That room does not exist in this tournament."
 msgstr "Die ruimte bestaat niet in dit toernooi."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:253
+#: lib/openpairings_nunki_web/live/tournament_live.ex:355
 #, elixir-autogen, elixir-format
 msgid "The announcers in the hall read each round's pairings aloud as soon as they are public, and show the countdown to the start of the round."
 msgstr "De omroepers in de zaal lezen de paringen van elke ronde voor zodra ze openbaar zijn, en tonen het aftellen tot de start van de ronde."
 
 #: lib/openpairings_nunki_web/live/index_live.ex:56
-#: lib/openpairings_nunki_web/live/tournament_live.ex:208
+#: lib/openpairings_nunki_web/live/tournament_live.ex:308
 #, elixir-autogen, elixir-format
 msgid "The hall announcer is switched off for your account."
 msgstr "De omroeper in de zaal staat uit voor je account."
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:553
 #, elixir-autogen, elixir-format
 msgid "This tournament has no rooms yet; make them in Settings, Rooms."
 msgstr "Dit toernooi heeft nog geen ruimtes; maak ze aan in Instellingen, Ruimtes."
@@ -272,7 +273,7 @@ msgstr "Dit toernooi heeft nog geen ruimtes; maak ze aan in Instellingen, Ruimte
 msgid "Tournament"
 msgstr "Toernooi"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex
+#: lib/openpairings_nunki_web/live/tournament_live.ex:548
 #, elixir-autogen, elixir-format
 msgid "Typed as \"%{room}\", not a room of this tournament."
 msgstr "Getypt als \"%{room}\", geen ruimte van dit toernooi."
@@ -282,29 +283,76 @@ msgstr "Getypt als \"%{room}\", geen ruimte van dit toernooi."
 msgid "Your announcers"
 msgstr "Je omroepers"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:218
+#: lib/openpairings_nunki_web/live/tournament_live.ex:318
 #, elixir-autogen, elixir-format
 msgid "never"
 msgstr "nooit"
 
 #: lib/openpairings_nunki_web/live/index_live.ex:89
-#: lib/openpairings_nunki_web/live/tournament_live.ex:389
+#: lib/openpairings_nunki_web/live/tournament_live.ex:559
 #, elixir-autogen, elixir-format
 msgid "offline"
 msgstr "offline"
 
 #: lib/openpairings_nunki_web/live/index_live.ex:89
-#: lib/openpairings_nunki_web/live/tournament_live.ex:389
+#: lib/openpairings_nunki_web/live/tournament_live.ex:559
 #, elixir-autogen, elixir-format
 msgid "online"
 msgstr "online"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:227
+#: lib/openpairings_nunki_web/live/tournament_live.ex:327
 #, elixir-autogen, elixir-format
 msgid "quiet"
 msgstr "stil"
 
-#: lib/openpairings_nunki_web/live/tournament_live.ex:226
+#: lib/openpairings_nunki_web/live/tournament_live.ex:326
 #, elixir-autogen, elixir-format
 msgid "speaking"
 msgstr "spreekt"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:458
+#, elixir-autogen, elixir-format
+msgid "Announce"
+msgstr "Omroepen"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:279
+#, elixir-autogen, elixir-format
+msgid "Announced to 1 announcer."
+msgid_plural "Announced to %{count} announcers."
+msgstr[0] "Omgeroepen bij 1 omroeper."
+msgstr[1] "Omgeroepen bij %{count} omroepers."
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:292
+#, elixir-autogen, elixir-format
+msgid "Arbiter's desk"
+msgstr "Arbiterbureau"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:291
+#, elixir-autogen, elixir-format
+msgid "Hand in results"
+msgstr "Uitslagen inleveren"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:289
+#, elixir-autogen, elixir-format
+msgid "Phones off"
+msgstr "Telefoons uit"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:460
+#, elixir-autogen, elixir-format
+msgid "Say it in the hall"
+msgstr "Zeg het in de zaal"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:288
+#, elixir-autogen, elixir-format
+msgid "Silence"
+msgstr "Stilte"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:290
+#, elixir-autogen, elixir-format
+msgid "Take your seats"
+msgstr "Neem plaats"
+
+#: lib/openpairings_nunki_web/live/tournament_live.ex:284
+#, elixir-autogen, elixir-format
+msgid "Type what to announce."
+msgstr "Typ wat je wilt omroepen."

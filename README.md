@@ -179,13 +179,15 @@ so.
 
 - **`/`, the control page.** The joined tournaments (line up or down, and
   why), the last round received, Read now, a countdown of your own (1, 2,
-  5, 10 or 15 minutes), Remove. The join field. The language of the
+  5, 10, 15, 20 or 30 minutes), canned announcements (silence, phones off,
+  take your seats, hand in results, the arbiter's desk) and a box for your own
+  words, Remove. The join field. The language of the
   announcements (follow the tournament, English, Nederlands), the voice per
   language and "Test voice", "Read the pairings when they are published",
   Stop.
 - **`/hall`, the hall screen.** Dark, full screen: during a countdown the
   minutes in very large digits, then "Round 3 has started"; otherwise the
-  latest pairings; at the bottom, the line being said. `?t=<id>` picks a
+  latest pairings; the last announcement, for a minute and a half, above all of it; at the bottom, the line being said. `?t=<id>` picks a
   tournament.
 - **`/help`**, the manual, English and Dutch.
 

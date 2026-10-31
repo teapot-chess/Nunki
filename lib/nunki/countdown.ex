@@ -3,7 +3,7 @@ defmodule Nunki.Countdown do
   The countdowns to the start of a round, one per joined tournament.
 
   Started by the server (`countdown`: a round, the seconds left and an id)
-  or from the control page (1, 2, 5, 10 or 15 minutes, for the last round
+  or from the control page (1, 2, 5, 10, 15, 20 or 30 minutes, for the last round
   received); cancelled by the server (`countdown_cancel` with that id) or
   from the control page. A `countdown` with the id of the one running is a
   restatement - the server says it again after every reconnect - and only
@@ -38,7 +38,7 @@ defmodule Nunki.Countdown do
   @linger_ms 10 * 60_000
 
   @doc "The minutes the control page offers."
-  def local_choices, do: [1, 2, 5, 10, 15]
+  def local_choices, do: [1, 2, 5, 10, 15, 20, 30]
 
   def start_link(opts \\ []), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
