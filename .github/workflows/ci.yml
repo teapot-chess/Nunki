@@ -156,7 +156,8 @@ jobs:
       # change there that breaks the plugin is found here the next morning.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: teapot-chess/openpairings
+          repository: teapot-chess/openpairings-internal
+          token: ${{ secrets.CONTRACTS_TOKEN }}
           ref: main
           path: openpairings
 
@@ -219,3 +220,5 @@ jobs:
       # `mix contracts.sync`, the tests, and whatever they then say.
       - name: Compare the vendored contracts with the providers'
         run: mix contracts.check
+        env:
+          CONTRACTS_TOKEN: ${{ secrets.CONTRACTS_TOKEN }}
