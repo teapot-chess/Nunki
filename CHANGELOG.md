@@ -15,6 +15,8 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Change] **All rights reserved.** The Apache License 2.0 was a generous document for a program that has decided to keep its own counsel. LICENSE is now a short all-rights-reserved notice, and the README and NOTICE agree. Releases already published under the Apache licence keep it, since a licence granted cannot be taken back; the new terms apply from here on.
+
 ## [0.6.0] - 2026-11-01
 
 - [Feature] **Announcements, canned or typed.** Nunki can now be told to say something: silence, phones off, take your seats, hand in your results, come to the arbiter's desk, or any line of up to 300 characters. From OpenPairings (the hall announcer's page) and from Manubrium it travels as a new `announce` frame; from the control page it needs no server at all. It is spoken at once in the announcement language, kept as the tournament's last announcement, and shown on the hall screen for a minute and a half, for the people who were, as ever, not listening. A repeated frame is said once. Part of the same additive `hall-link-v1`.
