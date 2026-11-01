@@ -1,13 +1,10 @@
 Nunki
-Copyright 2026 Jorian Burssens
-
-This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+Copyright (c) 2026 teapot-chess. All rights reserved; see LICENSE.
 
 The release tooling (rel/, the GitHub workflows, the data-home rule, the
 update check and the launcher's Details endpoint) and the join and link
 clients came from Alnasl (https://github.com/teapot-chess/Alnasl) and
-Arkab (https://github.com/teapot-chess/Arkab), by the same author and
-under the same licence. Changes: the names (Alnasl/Arkab -> Nunki), the
+Arkab (https://github.com/teapot-chess/Arkab), by the same owner. Changes: the names (Alnasl/Arkab -> Nunki), the
 port, what is kept (a JSON file instead of a database) and what is talked
 about over the link.
 
