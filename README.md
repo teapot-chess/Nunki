@@ -120,8 +120,16 @@ nobody wanted. The hall screen never shows it; the players have no use for
 our version numbers.
 
 Nunki listens on this machine only (port 4062). `NUNKI_LISTEN=lan` opens
-the pages to the hall's network - there is no PIN, so anybody on that
-network can then start a countdown or stop a reading. That is the trade.
+the pages to the hall's network. There is always an access PIN (6 random
+digits at the first start, in `access-pin` in the data folder, shown on
+Nunki's own control page, where you can change it or ask for a new random
+one; it cannot be removed). This machine's own browser is never asked; with
+`lan`, every other computer is, for every page including the hall screen
+(a TV's browser enters it once). Five wrong guesses make an address wait,
+longer each time, and changing the PIN logs every other browser out. A
+Raspberry Pi image can set the PIN before Nunki starts by leaving
+`pin-request` in the data folder (`set` and the PIN on the next line, or
+`new`); Nunki applies it, deletes it, and never logs the PIN.
 Either way Nunki answers only to its own names: `localhost`, `127.0.0.1`,
 `PHX_HOST` and, with `lan`, the machine's host name and addresses. A request
 for any other host (a web page that pointed its own name at this machine, or

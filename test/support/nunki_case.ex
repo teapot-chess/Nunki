@@ -31,7 +31,27 @@ defmodule Nunki.Case do
     Nunki.Store.reload()
     Nunki.Voice.refresh(Nunki.Voice.Fake, %{})
     Nunki.TestClock.set(1_000_000)
+    # A known PIN, and nobody locked out.
+    :ok = Nunki.AccessPin.set(pin())
+    Nunki.DoorGuard.reset()
     :ok
+  end
+
+  @doc "The PIN every test starts with."
+  def pin, do: "246810"
+
+  @doc "This machine's own browser: loopback peer, `Host: localhost`. Never asked for the PIN."
+  def local_conn do
+    Phoenix.ConnTest.build_conn() |> Map.put(:host, "localhost")
+  end
+
+  @doc """
+  Another computer on the hall's network: a LAN peer address (`ip`, a tuple)
+  asking for the host the station answers to in the tests. Asked for the PIN.
+  """
+  def remote_conn(ip \\ {192, 168, 1, 20}) do
+    conn = Phoenix.ConnTest.build_conn()
+    %{conn | remote_ip: ip}
   end
 
   @doc "Waits (by asking, never by sleeping) until `fun` is truthy; fails after `ms`."

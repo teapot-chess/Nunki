@@ -11,13 +11,13 @@ defmodule NunkiWeb.HelpLiveTest do
   @sections ~w(what join speech hall voices update advanced data trouble)
 
   test "English" do
-    {:ok, view, _html} = live(build_conn(), "/help")
+    {:ok, view, _html} = live(local_conn(), "/help")
     assert has_element?(view, "#manual")
     for s <- @sections, do: assert(has_element?(view, "#manual-#{s}"), s)
   end
 
   test "Dutch" do
-    conn = post(build_conn(), "/locale", %{"locale" => "nl", "return_to" => "/help"})
+    conn = post(local_conn(), "/locale", %{"locale" => "nl", "return_to" => "/help"})
     assert redirected_to(conn) == "/help"
     {:ok, view, html} = live(recycle(conn), "/help")
     assert html =~ "omroeper"
@@ -25,7 +25,7 @@ defmodule NunkiWeb.HelpLiveTest do
   end
 
   test "a newer version is announced on the help page too, pointing at the control page" do
-    {:ok, view, _html} = live(build_conn(), "/help")
+    {:ok, view, _html} = live(local_conn(), "/help")
     refute has_element?(view, "#update-banner")
 
     Nunki.Updates.Checker.put(%{
@@ -39,7 +39,7 @@ defmodule NunkiWeb.HelpLiveTest do
 
     on_exit(fn -> Nunki.Updates.Checker.forget() end)
 
-    {:ok, view, _html} = live(build_conn(), "/help")
+    {:ok, view, _html} = live(local_conn(), "/help")
     assert has_element?(view, "#update-banner", "9.9.9")
     assert has_element?(view, "#update-banner-control[href='/']")
   end
@@ -56,12 +56,12 @@ defmodule NunkiWeb.HelpLiveTest do
 
     on_exit(fn -> Nunki.Updates.Checker.forget() end)
 
-    {:ok, view, _html} = live(build_conn(), "/hall")
+    {:ok, view, _html} = live(local_conn(), "/hall")
     refute has_element?(view, "#update-banner")
   end
 
   test "the favicon is the mark on an ink tile, in the night accent" do
-    conn = get(build_conn(), "/favicon.svg")
+    conn = get(local_conn(), "/favicon.svg")
     assert conn.status == 200
     assert conn.resp_body =~ "#f0c46a"
     assert conn.resp_body =~ "#1b1b1a"

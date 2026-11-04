@@ -11,6 +11,7 @@ defmodule NunkiWeb.ControlLive do
   use NunkiWeb, :live_view
 
   alias Nunki.{
+    AccessPin,
     Announcer,
     Autostart,
     Countdown,
@@ -22,7 +23,7 @@ defmodule NunkiWeb.ControlLive do
     Voice
   }
 
-  alias NunkiWeb.Words
+  alias NunkiWeb.{PinText, Words}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -42,12 +43,21 @@ defmodule NunkiWeb.ControlLive do
        update_step: nil,
        update_busy: [],
        drafts: %{},
-       ticking?: false
+       ticking?: false,
+       pin_error: nil,
+       pin_form: to_form(%{"pin" => ""}, as: :pin)
      )
+     |> load_pin()
      |> load()}
   end
 
   # --- what the page shows ---------------------------------------------------
+
+  # The access PIN is read only for this machine's own screen. A remote
+  # browser, unlocked or not, gets nothing to show, and no event below works.
+  defp load_pin(socket) do
+    assign(socket, :access_pin, if(socket.assigns.local?, do: AccessPin.current()))
+  end
 
   defp load(socket) do
     rows = rows(socket.assigns.drafts)
@@ -293,6 +303,28 @@ defmodule NunkiWeb.ControlLive do
     Task.Supervisor.start_child(Nunki.TaskSupervisor, fn -> Voice.refresh() end)
     {:noreply, socket}
   end
+
+  def handle_event("pin_save", %{"pin" => %{"pin" => pin}}, %{assigns: %{local?: true}} = socket) do
+    case AccessPin.set(pin) do
+      :ok ->
+        {:noreply,
+         socket
+         |> assign(pin_error: nil, pin_form: to_form(%{"pin" => ""}, as: :pin))
+         |> load_pin()
+         |> put_flash(:info, pin_changed())}
+
+      {:error, reason} ->
+        {:noreply, assign(socket, pin_error: PinText.invalid(reason))}
+    end
+  end
+
+  def handle_event("pin_new", _params, %{assigns: %{local?: true}} = socket) do
+    AccessPin.regenerate()
+
+    {:noreply, socket |> assign(pin_error: nil) |> load_pin() |> put_flash(:info, pin_changed())}
+  end
+
+  def handle_event("pin_" <> _event, _params, socket), do: {:noreply, socket}
 
   def handle_event("device", %{"device" => %{"name" => name}}, socket) do
     Store.put_device_name(name)
@@ -747,6 +779,48 @@ defmodule NunkiWeb.ControlLive do
         </div>
       </section>
 
+      <section :if={@local?} id="pin-panel" class="panel">
+        <header class="panel-head">
+          <h2>{gettext("Access PIN")}</h2>
+        </header>
+
+        <p class="note">
+          {gettext(
+            "Every other computer that opens Nunki, the hall screen too, has to give this PIN (only when Nunki listens on the hall's network). This computer is never asked."
+          )}
+        </p>
+
+        <p>
+          <span class="note">{gettext("The PIN now:")}</span>
+          <strong id="access-pin-value" class="mono">{@access_pin}</strong>
+        </p>
+
+        <.form for={@pin_form} id="pin-form" class="inline-form" phx-submit="pin_save">
+          <.input
+            field={@pin_form[:pin]}
+            id="pin-input"
+            type="password"
+            label={gettext("A PIN of your own (6 to 64 characters)")}
+            autocomplete="off"
+            maxlength="64"
+            spellcheck="false"
+          />
+          <.button
+            id="pin-show"
+            type="button"
+            variant="ghost"
+            phx-click={JS.toggle_attribute({"type", "password", "text"}, to: "#pin-input")}
+          >
+            {gettext("Show")}
+          </.button>
+          <.button id="pin-save" type="submit">{gettext("Save")}</.button>
+          <.button id="pin-new" type="button" phx-click="pin_new">
+            {gettext("New random PIN")}
+          </.button>
+        </.form>
+        <p :if={@pin_error} id="pin-error" class="bad" role="alert">{@pin_error}</p>
+      </section>
+
       <section id="advanced-panel" class="panel">
         <label class="check" for="advanced-toggle">
           <input
@@ -767,6 +841,9 @@ defmodule NunkiWeb.ControlLive do
     </Layouts.app>
     """
   end
+
+  defp pin_changed,
+    do: gettext("PIN changed; every other browser has to give the new one.")
 
   defp canned_label("silence"), do: gettext("Silence")
   defp canned_label("phones"), do: gettext("Phones off")

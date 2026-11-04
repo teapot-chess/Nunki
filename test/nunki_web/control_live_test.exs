@@ -30,7 +30,7 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   test "an empty page says how to start, and has the join field" do
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     assert has_element?(view, "#tournaments-empty")
     assert has_element?(view, "#join-form")
     assert has_element?(view, "#brand svg.logo")
@@ -39,7 +39,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
   test "joining from the page puts the tournament in the list" do
     server = FakeServer.start()
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
 
     view |> form("#join-form", join: %{link: FakeServer.link(server)}) |> render_submit()
 
@@ -49,7 +49,7 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   test "a bad link is said under the field, nothing joined" do
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
 
     view
     |> form("#join-form", join: %{link: "https://x.example/p/polis/join/AB"})
@@ -64,7 +64,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
     test "with the line down the fields are disabled, and asking is refused" do
       id = tournament()
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
       row = "#tournaments-#{id}"
 
       assert has_element?(view, "#{row}-settings input[name='announcer[name]'][disabled]")
@@ -90,7 +90,7 @@ defmodule NunkiWeb.ControlLiveTest do
       eventually(fn -> Nunki.Link.info(id).up? end)
       eventually(fn -> Store.tournament(id)["announcer"] end)
 
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
       row = "#tournaments-#{id}"
 
       refute has_element?(view, "#{row}-settings input[disabled]")
@@ -143,7 +143,7 @@ defmodule NunkiWeb.ControlLiveTest do
           "rooms_available" => ["Main hall", "Annex"]
         })
 
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
       row = "#tournaments-#{id}"
 
       refute has_element?(view, "#{row}-settings input[name='announcer[room]']")
@@ -164,7 +164,7 @@ defmodule NunkiWeb.ControlLiveTest do
       {_server, id} =
         joined_with(%{"name" => "Hall PC", "room" => "Old foyer", "rooms_available" => ["Annex"]})
 
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
 
       assert has_element?(
                view,
@@ -174,7 +174,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
     test "a refusal from the server is said on the page" do
       {server, _id} = joined_with(%{"name" => "Hall PC", "room" => "", "rooms_available" => []})
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
 
       FakeServer.push(server, %{
         "type" => "settings",
@@ -190,7 +190,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
   test "a joined tournament: its line, its round, Read now, a countdown, Remove" do
     id = tournament(payload(3))
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
 
     row = "#tournaments-#{id}"
     assert has_element?(view, "#{row} .dot.down")
@@ -216,7 +216,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
   test "announcing from the control page: a canned button and free text" do
     id = tournament(payload(3))
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     row = "#tournaments-#{id}"
 
     view |> element("#{row}-canned-seats") |> render_click()
@@ -234,14 +234,14 @@ defmodule NunkiWeb.ControlLiveTest do
 
   test "Read now and the countdown need pairings first" do
     id = tournament()
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     assert has_element?(view, "#tournaments-#{id}-read[disabled]")
     assert has_element?(view, "#tournaments-#{id}-countdown-start[disabled]")
   end
 
   test "the language override, the voice and read-on-publish are kept" do
     Store.put_setting("advanced", true)
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
 
     view
     |> form("#speech-form",
@@ -257,14 +257,14 @@ defmodule NunkiWeb.ControlLiveTest do
 
   test "Test voice speaks the test line in that language (with the fake)" do
     Store.put_setting("advanced", true)
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     view |> element("#test-voice-nl") |> render_click()
     eventually(fn -> Fake.texts() == ["Zo klinkt de omroep in deze zaal."] end)
   end
 
   test "what is being said is on the page, and Stop stops it" do
     Fake.hold()
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     Speaker.say(["Board 1: somebody against somebody else."], "en")
     eventually(fn -> has_element?(view, "#speaker-line") end)
 
@@ -285,7 +285,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
     on_exit(fn -> Nunki.Updates.Checker.forget() end)
 
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     assert has_element?(view, "#update-banner")
     assert has_element?(view, "#update-banner-size")
     # Tests run as a copy that cannot update itself.
@@ -321,7 +321,7 @@ defmodule NunkiWeb.ControlLiveTest do
     id = tournament()
     {:ok, _} = Countdown.start(id, 5, 900)
 
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     view |> element("#update-apply") |> render_click()
     assert has_element?(view, "#update-busy")
     assert has_element?(view, "#update-force[data-confirm]")
@@ -334,16 +334,16 @@ defmodule NunkiWeb.ControlLiveTest do
   end
 
   test "Start with Windows is offered only to an installed Windows copy" do
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     # config/test.exs: install_kind is :manual.
     refute has_element?(view, "#autostart")
   end
 
   test "the language switch is a form posting to /locale" do
-    {:ok, view, _html} = live(build_conn(), "/")
+    {:ok, view, _html} = live(local_conn(), "/")
     assert has_element?(view, "form#language[action='/locale'] button#lang-nl")
 
-    conn = post(build_conn(), "/locale", %{"locale" => "nl", "return_to" => "/"})
+    conn = post(local_conn(), "/locale", %{"locale" => "nl", "return_to" => "/"})
     assert redirected_to(conn) == "/"
     {:ok, _view, html} = live(recycle(conn), "/")
     assert html =~ "Toernooien"
@@ -354,7 +354,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
     test "off by default: the page is small, the basics stay" do
       id = tournament(payload(1))
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
 
       for sel <- @advanced, do: refute(has_element?(view, sel), sel)
       refute has_element?(view, "#speech-form select[name='speech[voice_en]']")
@@ -373,7 +373,7 @@ defmodule NunkiWeb.ControlLiveTest do
 
     test "the switch shows and hides them, and is kept" do
       id = tournament()
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
 
       view |> element("#advanced-toggle") |> render_click()
       assert Store.setting("advanced") == true
@@ -388,13 +388,13 @@ defmodule NunkiWeb.ControlLiveTest do
 
     test "a chosen voice is still used while its picker is hidden" do
       Store.put_setting("voices", %{"nl" => "Fake Vlaams"})
-      {:ok, view, _html} = live(build_conn(), "/")
+      {:ok, view, _html} = live(local_conn(), "/")
       refute has_element?(view, "#speech-form select[name='speech[voice_nl]']")
       assert Store.setting("voices")["nl"] == "Fake Vlaams"
     end
 
     test "Dutch label" do
-      conn = post(build_conn(), "/locale", %{"locale" => "nl", "return_to" => "/"})
+      conn = post(local_conn(), "/locale", %{"locale" => "nl", "return_to" => "/"})
       {:ok, _view, html} = live(recycle(conn), "/")
       assert html =~ "Geavanceerde functies tonen"
     end

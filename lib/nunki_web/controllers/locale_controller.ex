@@ -10,6 +10,6 @@ defmodule NunkiWeb.LocaleController do
   def set(conn, params), do: redirect(conn, to: back(params))
 
   # Back to one of our own pages, never to wherever a form said.
-  defp back(%{"return_to" => path}) when path in ["/", "/hall", "/help"], do: path
+  defp back(%{"return_to" => path}) when path in ["/", "/hall", "/help", "/unlock"], do: path
   defp back(_params), do: "/"
 end

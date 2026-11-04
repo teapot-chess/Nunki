@@ -106,6 +106,18 @@ defmodule NunkiWeb.HelpLive do
           </p>
         </section>
 
+        <section id="manual-pin">
+          <h2>De pincode</h2>
+
+          <p>
+            Nunki heeft altijd een pincode. Je ziet hem op de besturingspagina van Nunki zelf, onder "Toegangspincode", en je kunt er een eigen van maken (6 tot 64 tekens) of een nieuwe willekeurige laten maken. Weghalen kan niet.
+          </p>
+
+          <p>
+            Draait Nunki alleen voor deze computer (de standaard), dan wordt niemand ernaar gevraagd. Staat Nunki op het netwerk van de zaal (<span class="mono">NUNKI_LISTEN=lan</span>), dan vraagt elke andere computer er eerst om, ook voor het zaalscherm: een tv-browser voert hem één keer in. Wie vijf keer fout raadt, moet steeds langer wachten. Verander je de pincode, dan moet elke andere browser de nieuwe invoeren. Op het zaalscherm zelf verschijnt hij nooit.
+          </p>
+        </section>
+
         <section id="manual-voices">
           <h2>Stemmen (geavanceerd)</h2>
 
@@ -281,6 +293,18 @@ defmodule NunkiWeb.HelpLive do
 
           <p>
             The screen is an extra. Nunki speaks whether it is open or not.
+          </p>
+        </section>
+
+        <section id="manual-pin">
+          <h2>The PIN</h2>
+
+          <p>
+            Nunki always has a PIN. You see it on Nunki's own control page, under "Access PIN", and you can make it one of your own (6 to 64 characters) or have a new random one made. It cannot be removed.
+          </p>
+
+          <p>
+            When Nunki runs for this computer only (the default), nobody is asked for it. When Nunki is on the hall's network (<span class="mono">NUNKI_LISTEN=lan</span>), every other computer is asked first, the hall screen included: a TV's browser enters it once. Anyone who guesses wrong five times has to wait longer and longer. Change the PIN and every other browser has to give the new one. It never appears on the hall screen itself.
           </p>
         </section>
 

@@ -23,6 +23,9 @@ defmodule Nunki.Application do
   def children do
     [
       Nunki.Cmd.Reaper,
+      # The PIN (the box's request first) before anything that could serve a page.
+      Nunki.AccessPin,
+      Nunki.DoorGuard,
       bounded({Phoenix.PubSub, name: Nunki.PubSub}),
       bounded({Registry, keys: :unique, name: Nunki.LinkRegistry}),
       bounded({Task.Supervisor, name: Nunki.TaskSupervisor})
