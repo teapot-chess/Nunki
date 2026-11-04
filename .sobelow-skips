@@ -27,3 +27,13 @@ Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/updates.ex:3
 XSS.Raw: XSS,lib/nunki_web/components/core_components.ex:16,72CE8FD
 XSS.Raw: XSS,lib/nunki_web/components/core_components.ex:53,2CBCE5D
 XSS.SendResp: XSS in `send_resp`,lib/nunki_web/endpoint.ex:58,1B3A0F3
+Config.CSP: Missing Content-Security-Policy,lib/nunki_web/router.ex:14,7A05C51
+Traversal.FileModule: Directory Traversal in `File.chmod!`,lib/nunki/access_pin.ex:213,514B478
+Traversal.FileModule: Directory Traversal in `File.open`,lib/nunki/access_pin.ex:210,188F4B4
+Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/access_pin.ex:191,39E28A6
+Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/access_pin.ex:235,753913D
+Traversal.FileModule: Directory Traversal in `File.rm!`,lib/nunki/access_pin.ex:208,5967134
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:207,24F30B5
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:236,4840D00
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:241,3C048E8
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/application.ex:78,2E826B6
