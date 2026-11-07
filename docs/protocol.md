@@ -3,10 +3,7 @@
 The protocol between OpenPairings and Nunki is not written down here any
 more. It is OpenPairings' contract **hall-link-v1**:
 
-- the provider's copy:
-  <https://github.com/teapot-chess/openpairings/tree/main/priv/contracts/hall-link-v1>
-  (its `README.md` is the prose: pairing a device, the line, changing it);
-- this repository's vendored copy, byte for byte:
+- the copy kept in this repository, byte for byte:
   `priv/contracts/vendor/openpairings/hall-link-v1/` (`mix contracts.sync`;
   `mix contracts.check` in CI, on every pull request and daily, says when
   the two differ).
