@@ -2,7 +2,7 @@
 
 The hall announcer. A small program on a computer in the playing hall,
 with speakers attached, that reads the pairings aloud as soon as they are
-published in [OpenPairings](https://github.com/teapot-chess/OpenPairings)
+published in [OpenPairings](https://pairings.cloud)
 and counts down to the start of the round:
 
 > Pairings for round 3 are published. Board 1: ... against ... -
@@ -17,7 +17,7 @@ projector.
 
 Nunki is one of the hall programs beside OpenPairings: Alnasl reads the
 boards, Polis prints, Nunki speaks. They share a protocol, OpenPairings'
-[hall-link-v1](https://github.com/teapot-chess/openpairings/tree/main/priv/contracts/hall-link-v1)
+[hall-link-v1](priv/contracts/vendor/openpairings/hall-link-v1)
 (Nunki's notes on it: [docs/protocol.md](docs/protocol.md)), and a habit of dialling out, so
 nothing in the hall's network has to be opened.
 
@@ -168,7 +168,7 @@ or use a machine without a desktop, where ALSA is the sound server.
 A print station's link, or the phone app's, is refused before it is used
 up. An announcer already joined stays joined; the link is only for joining.
 Pairing works the same way for every hall app; the rules are in OpenPairings'
-[hall-link-v1 contract](https://github.com/teapot-chess/openpairings/tree/main/priv/contracts/hall-link-v1). One Nunki can join
+[hall-link-v1 contract](priv/contracts/vendor/openpairings/hall-link-v1). One Nunki can join
 several tournaments; each has its own line and its own countdown.
 
 Each tournament also gives this announcer a name and a room. OpenPairings
