@@ -198,8 +198,22 @@ defmodule NunkiWeb.ControlLive do
   end
 
   def handle_event("remove", %{"id" => id}, socket) do
-    Tournaments.remove(id)
-    {:noreply, socket |> put_flash(:info, gettext("Removed.")) |> load()}
+    {_result, told} = Tournaments.remove_reporting(id)
+
+    flash =
+      case told do
+        :told ->
+          {:info, gettext("Removed.")}
+
+        :not_told ->
+          {:error,
+           gettext(
+             "Removed here. OpenPairings was not told, because the line was down; remove this device there too."
+           )}
+      end
+
+    {kind, text} = flash
+    {:noreply, socket |> put_flash(kind, text) |> load()}
   end
 
   def handle_event("announcer_draft", %{"announcer" => %{"tournament" => id} = params}, socket),
@@ -659,9 +673,15 @@ defmodule NunkiWeb.ControlLive do
                 phx-click="remove"
                 phx-value-id={t.id}
                 data-confirm={
-                  gettext(
-                    "Remove this tournament from Nunki? OpenPairings is told, and nothing more is announced for it here."
-                  )
+                  if t.up?,
+                    do:
+                      gettext(
+                        "Remove this tournament from Nunki? OpenPairings is told, and nothing more is announced for it here."
+                      ),
+                    else:
+                      gettext(
+                        "Remove this tournament from Nunki? The line is down, so OpenPairings is NOT told: remove this device there too. Nothing more is announced for it here."
+                      )
                 }
               >
                 {gettext("Remove")}

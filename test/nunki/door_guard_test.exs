@@ -55,12 +55,31 @@ defmodule Nunki.DoorGuardTest do
     assert {:wait, _} = DoorGuard.claim(@ip, 0)
   end
 
-  test "the box takes 40 failures a minute from anybody, then everybody waits" do
+  test "the box takes 40 failures a minute from anybody, then those who failed wait" do
     for n <- 1..40, do: fail({10, 0, 0, n}, 100)
 
-    assert {:wait, 60} = DoorGuard.claim({10, 0, 1, 1}, 100)
-    assert {:wait, 11} = DoorGuard.claim({10, 0, 1, 2}, 149)
-    assert {:ok, _} = DoorGuard.claim({10, 0, 1, 3}, 160)
+    assert {:wait, 60} = DoorGuard.claim({10, 0, 0, 1}, 100)
+    assert {:wait, 11} = DoorGuard.claim({10, 0, 0, 2}, 149)
+    assert {:ok, _} = DoorGuard.claim({10, 0, 0, 3}, 160)
+  end
+
+  test "at the box-wide cap an address that has not failed still gets 2 tries of its own" do
+    for n <- 1..40, do: fail({10, 0, 0, n}, 100)
+    fresh = {10, 0, 2, 1}
+
+    assert {:ok, _} = DoorGuard.claim(fresh, 100)
+    assert {:ok, _} = DoorGuard.claim(fresh, 100)
+    assert {:wait, _} = DoorGuard.claim(fresh, 100)
+    # An address that had failed before the cap gets none.
+    assert {:wait, _} = DoorGuard.claim({10, 0, 0, 3}, 100)
+  end
+
+  test "a right guess gives back its own failure, not another address's at the same second" do
+    for n <- 1..39, do: fail({10, 0, 0, n}, 100)
+    {:ok, at} = DoorGuard.claim({10, 0, 0, 40}, 100)
+    # The cap is reached; the one who was right hands its own back.
+    DoorGuard.succeeded({10, 0, 0, 40}, at)
+    assert {:ok, _} = DoorGuard.claim({10, 0, 0, 2}, 100)
   end
 
   test "a right guess does not count against the box" do

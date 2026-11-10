@@ -10,7 +10,7 @@ defmodule OpenPairingsNunki.MixProject do
   def project do
     [
       app: :openpairings_nunki,
-      version: "0.3.0",
+      version: "0.6.0",
       elixir: "~> 1.18",
       deps: []
     ]

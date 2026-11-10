@@ -135,9 +135,16 @@ defmodule NunkiWeb.AccessGateTest do
       assert redirected_to(unlock(remote_conn({192, 168, 1, 99}))) == "/"
     end
 
-    test "40 wrong guesses from anywhere shut the door on everybody for a minute" do
+    test "40 wrong guesses from anywhere shut the door on every address that has failed" do
       for n <- 1..40, do: DoorGuard.claim({10, 1, 0, n})
-      assert html_response(unlock(remote_conn({192, 168, 1, 77})), 429)
+      assert html_response(unlock(remote_conn({10, 1, 0, 1})), 429)
+    end
+
+    test "at that cap a device that has not failed yet still has 2 tries of its own" do
+      for n <- 1..40, do: DoorGuard.claim({10, 1, 0, n})
+      fresh = {192, 168, 1, 77}
+      assert html_response(unlock(remote_conn(fresh), "000000"), 401)
+      assert redirected_to(unlock(remote_conn(fresh))) == "/"
     end
   end
 

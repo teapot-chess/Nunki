@@ -83,11 +83,14 @@ defmodule Nunki.Link do
     :exit, _reason -> {:error, :down}
   end
 
-  @doc "Tells the server this device is leaving the tournament, if the line is up."
+  @doc """
+  Tells the server this device is leaving the tournament, if the line is up.
+  `:told`, or `:not_told` when the line was down (nothing was sent).
+  """
   def leave(pid) do
     GenServer.call(pid, :leave)
   catch
-    :exit, _reason -> :ok
+    :exit, _reason -> :not_told
   end
 
   # --- the process -------------------------------------------------------------
@@ -128,10 +131,10 @@ defmodule Nunki.Link do
 
   def handle_call(:leave, _from, %{up?: true} = state) do
     state = push(state, %{"type" => "leave"})
-    {:reply, :ok, close(state) |> Map.put(:stopping, true)}
+    {:reply, :told, close(state) |> Map.put(:stopping, true)}
   end
 
-  def handle_call(:leave, _from, state), do: {:reply, :ok, Map.put(state, :stopping, true)}
+  def handle_call(:leave, _from, state), do: {:reply, :not_told, Map.put(state, :stopping, true)}
 
   @impl true
   def handle_info(:connect, %{conn: nil} = state) do

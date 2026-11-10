@@ -18,6 +18,15 @@ defmodule Nunki.ReleaseFilesTest do
 
   defp read(path), do: File.read!(Path.join(@root, path))
 
+  test "the plug-in's version is the program's" do
+    version = fn file -> Regex.run(~r/version: "([^"]+)"/, read(file)) |> Enum.at(1) end
+    assert version.("plugins/openpairings_nunki/mix.exs") == version.("mix.exs")
+
+    plugin = read("plugins/openpairings_nunki/lib/openpairings_nunki/plugin.ex")
+    assert [_, v] = Regex.run(~r/@version "([^"]+)"/, plugin)
+    assert v == version.("mix.exs")
+  end
+
   defp version, do: Mix.Project.config()[:version]
 
   describe "the workflows" do
