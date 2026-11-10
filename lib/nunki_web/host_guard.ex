@@ -38,7 +38,12 @@ defmodule NunkiWeb.HostGuard do
     else
       conn
       |> put_resp_content_type("text/plain")
-      |> send_resp(403, "Forbidden")
+      |> send_resp(
+        403,
+        "Forbidden: Nunki does not answer to the name " <>
+          "#{conn.host}. Use localhost or this machine's address, " <>
+          "or set PHX_HOST to that name."
+      )
       |> halt()
     end
   end

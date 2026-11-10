@@ -25,6 +25,12 @@ defmodule NunkiWeb.UnlockHTML do
             )}
           </p>
 
+          <p id="unlock-headless" class="note">
+            {gettext(
+              "On a box without a screen it is in the file access-pin in Nunki's data folder (on Linux: sudo cat /var/lib/nunki/access-pin)."
+            )}
+          </p>
+
           <p :if={@error} id="unlock-error" class="bad" role="alert">{@error}</p>
 
           <.form for={@form} id="unlock-form" action={~p"/unlock"} method="post" class="inline-form">

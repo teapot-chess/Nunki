@@ -376,6 +376,24 @@ defmodule Nunki.Updates do
     end
   end
 
+  @doc """
+  `last_result/0`, but only if the updater wrote it at or after `unix_seconds`:
+  what an update that was asked for just now answered, not what the one
+  before it did.
+  """
+  def last_result_since(unix_seconds) do
+    with path when is_binary(path) <- status_path(),
+         {:ok, %File.Stat{mtime: written}} <- File.stat(path, time: :posix),
+         true <- written >= unix_seconds do
+      last_result()
+    else
+      _older_or_none -> nil
+    end
+  end
+
+  defp status_path,
+    do: Application.get_env(:nunki, :update_status_file) || System.get_env("NUNKI_UPDATE_STATUS")
+
   @doc "Where the Linux installation leaves its request for the updater."
   def request_dir, do: Path.join(Paths.data(), "update")
 
@@ -385,10 +403,7 @@ defmodule Nunki.Updates do
   the unit names in `NUNKI_UPDATE_STATUS`.
   """
   def last_result do
-    path =
-      Application.get_env(:nunki, :update_status_file) || System.get_env("NUNKI_UPDATE_STATUS")
-
-    with path when is_binary(path) <- path,
+    with path when is_binary(path) <- status_path(),
          {:ok, text} <- File.read(path),
          [word, version | rest] <- text |> String.trim() |> String.split(" ", parts: 3) do
       case word do

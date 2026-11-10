@@ -154,8 +154,14 @@ defmodule Nunki.Store do
       |> Map.merge(Map.take(attrs, ["server", "socket", "key", "tournament"]))
       |> Map.put("id", id)
 
+    # Joining spends a one-time code and the key is kept here and nowhere
+    # else: a join that could not be written is not a join.
     data = put_in(state.data, ["tournaments", id], entry)
-    {:reply, {:ok, id}, save(state, data)}
+
+    case persist(state, data) do
+      {:ok, state} -> {:reply, {:ok, id}, state}
+      {:error, _reason} -> {:reply, {:error, :write}, state}
+    end
   end
 
   def handle_call({:remove, id}, _from, state) do
@@ -239,12 +245,23 @@ defmodule Nunki.Store do
   end
 
   defp save(state, data) do
-    if data != state.data do
-      write(state.path, data)
-      Nunki.broadcast(:state_changed)
+    case persist(state, data) do
+      {:ok, state} -> state
+      # The failure is logged by write/2. What is on screen stays true to
+      # what the hall did; the file catches up at the next write.
+      {:error, _reason} -> %{state | data: data}
     end
+  end
 
-    %{state | data: data}
+  defp persist(state, data) do
+    if data == state.data do
+      {:ok, state}
+    else
+      with :ok <- write(state.path, data) do
+        Nunki.broadcast(:state_changed)
+        {:ok, %{state | data: data}}
+      end
+    end
   end
 
   def write(path, data) do
@@ -256,13 +273,23 @@ defmodule Nunki.Store do
     # does next to nothing and the profile folder's own rights do the job.
     with :ok <- File.write(tmp, ""),
          _ <- File.chmod(tmp, 0o600),
-         :ok <- File.write(tmp, Jason.encode_to_iodata!(data, pretty: true)),
+         :ok <- write_synced(tmp, Jason.encode_to_iodata!(data, pretty: true)),
          :ok <- File.rename(tmp, path) do
       :ok
     else
       {:error, reason} ->
         Logger.error("state.json could not be written: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  # On disk before the rename: a power cut after a rename of data that was
+  # never flushed leaves an empty file where the keys were.
+  defp write_synced(path, iodata) do
+    with {:ok, io} <- File.open(path, [:write, :binary]) do
+      result = with :ok <- IO.binwrite(io, iodata), do: :file.sync(io)
+      File.close(io)
+      result
     end
   end
 

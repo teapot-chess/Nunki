@@ -49,6 +49,7 @@ defmodule Nunki.Speaker do
   @impl true
   def init(_opts) do
     Process.flag(:trap_exit, true)
+    Nunki.Voice.sweep()
     {:ok, %{queue: :queue.new(), current: nil, error: nil, timer: nil}}
   end
 

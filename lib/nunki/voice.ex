@@ -231,9 +231,18 @@ defmodule Nunki.Voice do
   def finished(%{file: file} = handle) do
     if os_pid = handle[:os_pid], do: Nunki.Cmd.Reaper.unwatch(os_pid)
     File.rm(file)
+    # Windows renders the reading to a .wav beside the text, and removes it
+    # itself - unless Stop killed PowerShell first.
+    File.rm(Path.rootname(file) <> ".wav")
   end
 
   def finished(_handle), do: :ok
+
+  @doc "Removes what earlier readings left in the speech folder (at start-up, when none can be running)."
+  def sweep do
+    for file <- Path.wildcard(Path.join(Nunki.Paths.speech_dir(), "say-*")), do: File.rm(file)
+    :ok
+  end
 
   @doc """
   Stops an utterance now. The program and anything it started are killed:

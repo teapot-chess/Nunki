@@ -111,6 +111,7 @@ defmodule Nunki.Link do
        error: nil,
        backoff: 1_000,
        heard: now(),
+       ping: nil,
        status_sent: nil
      }}
   end
@@ -142,16 +143,18 @@ defmodule Nunki.Link do
 
   def handle_info(:connect, state), do: {:noreply, state}
 
-  def handle_info(:ping, %{up?: true} = state) do
+  # One chain of pings at a time: the token says which chain a tick belongs
+  # to, so a tick from a line that has since dropped and come back is not a
+  # second chain (they used to multiply with every reconnect).
+  def handle_info({:ping, token}, %{up?: true, ping: token} = state) do
     if now() - state.heard > @dead_ms do
       {:noreply, lost(state, :silent)}
     else
-      Process.send_after(self(), :ping, @ping_ms)
-      {:noreply, send_frame(state, {:ping, ""})}
+      {:noreply, state |> schedule_ping() |> send_frame({:ping, ""})}
     end
   end
 
-  def handle_info(:ping, state), do: {:noreply, state}
+  def handle_info({:ping, _stale}, state), do: {:noreply, state}
 
   def handle_info(:stop, state), do: {:stop, :normal, state}
 
@@ -258,9 +261,24 @@ defmodule Nunki.Link do
   defp after_frames(%{lost: reason} = state), do: lost(Map.delete(state, :lost), reason)
   defp after_frames(state), do: state
 
+  # A frame this version cannot make sense of (a newer or buggier server) is
+  # skipped, not a reason for the line to crash, reconnect, be sent the same
+  # frame again and crash again until the supervisor gives up on every line.
+  defp handle_message(message, state) do
+    message(message, state)
+  rescue
+    error ->
+      Logger.warning(
+        "nunki: a #{inspect(message["type"])} frame could not be handled and was skipped: " <>
+          Exception.message(error)
+      )
+
+      state
+  end
+
   defp frame({:text, text}, state) do
     case Jason.decode(text) do
-      {:ok, %{"type" => _} = message} -> message(message, state)
+      {:ok, %{"type" => _} = message} -> handle_message(message, state)
       _bad -> state
     end
   end
@@ -272,7 +290,7 @@ defmodule Nunki.Link do
   # --- the conversation --------------------------------------------------------
 
   defp message(%{"type" => "welcome"} = welcome, state) do
-    Process.send_after(self(), :ping, @ping_ms)
+    state = schedule_ping(state)
 
     # The name may have changed in OpenPairings since the join.
     case welcome["tournament"] do
@@ -424,7 +442,13 @@ defmodule Nunki.Link do
 
   defp close(state) do
     if state.conn, do: Mint.HTTP.close(state.conn)
-    %{state | conn: nil, websocket: nil, ref: nil, up?: false}
+    %{state | conn: nil, websocket: nil, ref: nil, up?: false, ping: nil}
+  end
+
+  defp schedule_ping(state) do
+    token = make_ref()
+    Process.send_after(self(), {:ping, token}, @ping_ms)
+    %{state | ping: token}
   end
 
   defp lost(%{stopping: true} = state, _reason), do: close(state)
