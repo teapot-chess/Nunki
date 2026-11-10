@@ -114,7 +114,7 @@ defmodule NunkiWeb.HelpLive do
           </p>
 
           <p>
-            Draait Nunki alleen voor deze computer (de standaard), dan wordt niemand ernaar gevraagd. Staat Nunki op het netwerk van de zaal (<span class="mono">NUNKI_LISTEN=lan</span>), dan vraagt elke andere computer er eerst om, ook voor het zaalscherm: een tv-browser voert hem één keer in. Wie vijf keer fout raadt, moet steeds langer wachten. Verander je de pincode, dan moet elke andere browser de nieuwe invoeren. Op het zaalscherm zelf verschijnt hij nooit.
+            Draait Nunki alleen voor deze computer (de standaard), dan wordt niemand ernaar gevraagd. Staat Nunki op het netwerk van de zaal (<span class="mono">NUNKI_LISTEN=lan</span>), dan vraagt elke andere computer er eerst om, ook voor het zaalscherm: een tv-browser voert hem één keer in. Wie vijf keer fout raadt, moet steeds langer wachten. Raadt de hele zaal veertig keer fout in een minuut, dan wacht iedereen die al fout raadde; een computer die nog niet fout raadde krijgt nog twee eigen pogingen. Verander je de pincode, dan moet elke andere browser de nieuwe invoeren. Op het zaalscherm zelf verschijnt hij nooit.
           </p>
         </section>
 
@@ -304,7 +304,7 @@ defmodule NunkiWeb.HelpLive do
           </p>
 
           <p>
-            When Nunki runs for this computer only (the default), nobody is asked for it. When Nunki is on the hall's network (<span class="mono">NUNKI_LISTEN=lan</span>), every other computer is asked first, the hall screen included: a TV's browser enters it once. Anyone who guesses wrong five times has to wait longer and longer. Change the PIN and every other browser has to give the new one. It never appears on the hall screen itself.
+            When Nunki runs for this computer only (the default), nobody is asked for it. When Nunki is on the hall's network (<span class="mono">NUNKI_LISTEN=lan</span>), every other computer is asked first, the hall screen included: a TV's browser enters it once. Anyone who guesses wrong five times has to wait longer and longer. If the whole hall guesses wrong forty times in a minute, everyone who already guessed wrong waits; a computer that has not guessed wrong yet still gets two tries of its own. Change the PIN and every other browser has to give the new one. It never appears on the hall screen itself.
           </p>
         </section>
 

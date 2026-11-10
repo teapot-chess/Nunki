@@ -15,6 +15,10 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Fix] **One phone can no longer lock every other browser out of the PIN door.** The box-wide cap of forty wrong guesses a minute stays, but once it is reached an address that has not failed yet still gets two tries of its own, and a right PIN gives back its own failure to the count instead of whichever one shared its second.
+- [Fix] **"Remove" no longer claims OpenPairings is told when the line is down.** The confirmation says when it will not be, and afterwards the page says OpenPairings was not told and that the device has to be removed there too. With the line up nothing changes.
+- [Fix] **The plug-in says 0.6.0.** It said 0.3.0 while speaking announcements and rooms, so OpenPairings' plug-in list was out of date; a test now holds it to the program's own version.
+
 - [Fix] **The installer shows the PIN, and says that there is one.** `install.sh --lan` is for a box without a screen, the PIN was only ever shown on a screen, and the installer cheerfully ended with "no PIN", which made the first visit from the arbiter's laptop a short and unrewarding one. The installer now prints the PIN when it is done (it is in `/var/lib/nunki/access-pin` for root to read, so the installer can), says where it lives, and the unlock page names the same file for a box with no screen. The three lines that claimed there was no PIN are gone.
 - [Fix] **A failed Linux update says it failed.** The updater wrote down what went wrong and nobody read it, so the control page announced "Nunki stops and comes back in about a minute" to a Nunki that had not stopped and was not going to. The page now asks, and a failure is shown with the updater's own words and a button to try again.
 - [Fix] **The updater trusts no symlink in a folder the service owns.** It runs as root inside `/var/lib/nunki`, which belongs to the unprivileged service user, and used to copy and chown whatever it found there. A state file or a `backups` folder that is a symlink is now skipped with a word, and so is a request that is not a plain file.

@@ -31,14 +31,25 @@ defmodule Nunki.Tournaments do
   up, the countdown goes, and so does everything kept about it.
   """
   def remove(id) do
-    case Link.whereis(id) do
-      nil -> :ok
-      pid -> Link.leave(pid)
-    end
+    {result, _told} = remove_reporting(id)
+    result
+  end
+
+  @doc """
+  Like `remove/1`, and says whether OpenPairings was told: `{result, :told}`
+  or `{result, :not_told}` (the line was down, so the key stays valid there
+  until somebody removes the device on that side).
+  """
+  def remove_reporting(id) do
+    told =
+      case Link.whereis(id) do
+        nil -> :not_told
+        pid -> Link.leave(pid)
+      end
 
     stop_link(id)
     Countdown.cancel(id)
-    Store.remove_tournament(id)
+    {Store.remove_tournament(id), told}
   end
 
   @doc """

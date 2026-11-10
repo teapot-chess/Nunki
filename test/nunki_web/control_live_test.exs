@@ -214,6 +214,16 @@ defmodule NunkiWeb.ControlLiveTest do
     assert has_element?(view, "#tournaments-empty")
   end
 
+  test "removing with the line down says OpenPairings was not told" do
+    id = tournament()
+    {:ok, view, _html} = live(local_conn(), "/")
+    row = "#tournaments-#{id}"
+
+    html = view |> element("#{row}-remove") |> render_click()
+    assert html =~ "was not told"
+    assert Store.tournaments() == []
+  end
+
   test "announcing from the control page: a canned button and free text" do
     id = tournament(payload(3))
     {:ok, view, _html} = live(local_conn(), "/")
