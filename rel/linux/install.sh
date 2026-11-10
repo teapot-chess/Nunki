@@ -11,8 +11,9 @@
 #
 # Options (after `sh -s --` when piped):
 #   --lan             let other machines in the hall reach the pages (a box
-#                     without a screen). There is no PIN: anybody on the
-#                     hall's network can then start a countdown.
+#                     without a screen). They are asked for the access PIN,
+#                     which this script prints when it is done and which
+#                     stays in /var/lib/nunki/access-pin.
 #   --version X.Y.Z   that release instead of the latest
 #
 # What it does, and nothing more:
@@ -150,12 +151,17 @@ main() {
             echo "PORT=4062"
             echo ""
             echo "# Who may open the pages. Without this line only this machine;"
-            echo "# with it, the hall's network as well. There is no PIN."
+            echo "# with it, the hall's network as well, which then asks for the PIN:"
+            echo "#   sudo cat $DATA_DIR/access-pin"
             if [ "$lan" = 1 ]; then
                 echo "NUNKI_LISTEN=lan"
             else
                 echo "#NUNKI_LISTEN=lan"
             fi
+            echo ""
+            echo "# A name the hall's router gives this box (nunki.venue.lan) is refused"
+            echo "# until it is listed here:"
+            echo "#PHX_HOST=nunki.venue.lan"
         } >"$CONF_DIR/nunki.env"
         chmod 0644 "$CONF_DIR/nunki.env"
     fi
@@ -174,10 +180,30 @@ main() {
     say "Nunki $version is installed and running."
     say "  The pages:   http://localhost:4062 on this box"
     if [ "$lan" = 1 ]; then
-        say "               and http://<this box's address>:4062 from the hall's network (no PIN)."
+        say "               and http://<this box's address>:4062 from the hall's network."
+        say "               Those computers are asked for the access PIN (see below)."
     else
         say "               (NUNKI_LISTEN=lan in $CONF_DIR/nunki.env opens them to the hall's network.)"
     fi
+    # There is always a PIN, and a box without a screen has nowhere to show
+    # it but here: Nunki makes it when it starts, so give it a moment.
+    pin=""
+    waited=0
+    while [ "$waited" -lt 20 ]; do
+        if [ -r "$DATA_DIR/access-pin" ]; then
+            pin=$(head -n 1 "$DATA_DIR/access-pin" | sed 's/[[:space:]]*$//')
+            [ -n "$pin" ] && break
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    if [ -n "$pin" ]; then
+        say "  Access PIN:  $pin"
+    else
+        say "  Access PIN:  not made yet; once Nunki has started: sudo cat $DATA_DIR/access-pin"
+    fi
+    say "               Kept in $DATA_DIR/access-pin; change it on the control page,"
+    say "               or before a start with a pin-request file (README)."
     say "  The data:    $DATA_DIR"
     say "  The program: $INSTALL_DIR"
     say "  Its log:     journalctl -u nunki"

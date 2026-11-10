@@ -42,7 +42,7 @@ config :esbuild,
   ]
 
 # What never goes into a log, at any level: the join code in a link, a key.
-config :phoenix, :filter_parameters, ["link", "code", "key", "token", "secret"]
+config :phoenix, :filter_parameters, ["link", "code", "key", "token", "secret", "pin"]
 
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",

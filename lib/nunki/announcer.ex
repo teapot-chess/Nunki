@@ -39,7 +39,30 @@ defmodule Nunki.Announcer do
   A round payload from the server. `:read` when it was read aloud, `:kept`
   otherwise.
   """
-  def round_received(tournament_id, %{"round" => round} = payload) when is_integer(round) do
+  def round_received(tournament_id, %{"round" => round} = payload)
+      when is_integer(round) do
+    if well_formed?(payload), do: store_round(tournament_id, round, payload), else: :kept
+  end
+
+  def round_received(_tournament_id, _payload), do: :kept
+
+  # What the script and the hall screen will read out of it: boards a list of
+  # maps, each with a label that is text or a number, players absent or maps.
+  # Anything else would only be a crash waiting for the next page load.
+  defp well_formed?(%{"boards" => boards}) when is_list(boards), do: Enum.all?(boards, &board?/1)
+  defp well_formed?(%{"boards" => nil}), do: true
+  defp well_formed?(payload), do: not Map.has_key?(payload, "boards")
+
+  defp board?(%{} = board) do
+    scalar?(board["board"]) and
+      Enum.all?(["white", "black"], &(board[&1] in [nil] or is_map(board[&1])))
+  end
+
+  defp board?(_other), do: false
+
+  defp scalar?(value), do: is_nil(value) or is_binary(value) or is_number(value)
+
+  defp store_round(tournament_id, round, payload) do
     result =
       Store.update_tournament(tournament_id, fn t ->
         t
@@ -60,8 +83,6 @@ defmodule Nunki.Announcer do
         :kept
     end
   end
-
-  def round_received(_tournament_id, _payload), do: :kept
 
   @doc """
   Reads a round's pairings now. `round` nil is the latest; a round other

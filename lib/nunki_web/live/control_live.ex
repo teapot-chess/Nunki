@@ -42,6 +42,8 @@ defmodule NunkiWeb.ControlLive do
        update: Updates.notice(),
        update_step: nil,
        update_busy: [],
+       update_failed: nil,
+       update_asked_at: nil,
        drafts: %{},
        ticking?: false,
        pin_error: nil,
@@ -257,6 +259,8 @@ defmodule NunkiWeb.ControlLive do
     {:noreply, load(socket)}
   end
 
+  def handle_event("announce_canned", _params, socket), do: {:noreply, socket}
+
   def handle_event(
         "announce_text",
         %{"announce" => %{"tournament" => id, "text" => text}},
@@ -349,7 +353,17 @@ defmodule NunkiWeb.ControlLive do
   def handle_event("update_apply", params, socket) do
     case Updates.apply(force: params["force"] == "yes") do
       :ok ->
-        {:noreply, assign(socket, update_step: :going, update_busy: [])}
+        # On Linux the updater is a separate unit, and if it fails, nothing
+        # restarts and nothing reconnects: ask it how it did.
+        if Updates.install_kind() == :systemd, do: poll_update_later()
+
+        {:noreply,
+         assign(socket,
+           update_step: :going,
+           update_busy: [],
+           update_failed: nil,
+           update_asked_at: System.os_time(:second)
+         )}
 
       {:error, {:busy, reasons}} ->
         {:noreply, assign(socket, update_step: :busy, update_busy: reasons)}
@@ -375,6 +389,10 @@ defmodule NunkiWeb.ControlLive do
   def handle_event("update_cancel", _params, socket),
     do: {:noreply, assign(socket, update_step: nil, update_busy: [])}
 
+  defp poll_update_later,
+    do:
+      Process.send_after(self(), :update_poll, Application.get_env(:nunki, :update_poll_ms, 3000))
+
   # --- messages ----------------------------------------------------------------------
 
   @impl true
@@ -392,6 +410,24 @@ defmodule NunkiWeb.ControlLive do
      |> load()}
   end
 
+  def handle_info(
+        :update_poll,
+        %{assigns: %{update_step: :going, update_asked_at: asked}} = socket
+      ) do
+    version = socket.assigns.update && socket.assigns.update.version
+
+    case Updates.last_result_since(asked) do
+      {:failed, ^version, why} ->
+        {:noreply, assign(socket, update_step: :failed, update_failed: why)}
+
+      _not_yet ->
+        poll_update_later()
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(:update_poll, socket), do: {:noreply, socket}
+
   def handle_info(:update_changed, socket),
     do: {:noreply, assign(socket, update: Updates.notice())}
 
@@ -407,6 +443,7 @@ defmodule NunkiWeb.ControlLive do
         :if={@update}
         update={@update}
         step={@update_step}
+        failed={@update_failed || ""}
         busy={@update_busy}
         kind={@install_kind}
       />
@@ -872,6 +909,7 @@ defmodule NunkiWeb.ControlLive do
   attr :update, :map, required: true
   attr :step, :atom, default: nil
   attr :busy, :list, default: []
+  attr :failed, :string, default: ""
   attr :kind, :atom, required: true
 
   defp update_banner(assigns) do
@@ -899,6 +937,10 @@ defmodule NunkiWeb.ControlLive do
           {gettext(
             "Updating. Nunki stops and comes back in about a minute; this page reconnects by itself."
           )}
+        </p>
+        <p :if={@step == :failed} id="update-failed" class="bad" role="alert">
+          {gettext("The update did not go through, and nothing was changed. You can try again.")}
+          <code :if={@failed != ""} id="update-failed-why">{@failed}</code>
         </p>
         <p :if={@step == :manual or @kind == :manual} id="update-manual" class="note">
           {gettext("This copy does not update itself: download the new version and replace this one.")}

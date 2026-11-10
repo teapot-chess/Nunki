@@ -49,6 +49,12 @@ defmodule NunkiWeb.Words do
   def join_error(:unreachable),
     do: gettext("Could not reach the server. Check the link and the network.")
 
+  def join_error(:write),
+    do:
+      gettext(
+        "The tournament could not be saved on this machine, and the link is spent. Check the disk and make a new link in OpenPairings."
+      )
+
   def join_error(_other), do: gettext("Joining did not work.")
 
   @doc "Why a line is down, or nil when there is nothing to say."

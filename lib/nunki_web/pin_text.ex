@@ -11,6 +11,9 @@ defmodule NunkiWeb.PinText do
   def invalid(reason) when reason in [:control, :invalid_utf8],
     do: gettext("The PIN has a character that cannot be seen or typed.")
 
+  def invalid(:write),
+    do: gettext("The PIN could not be saved: Nunki cannot write to its data folder.")
+
   def invalid(_other), do: gettext("That cannot be the PIN.")
 
   def wait(seconds), do: ngettext("Wait 1 second.", "Wait %{count} seconds.", seconds)

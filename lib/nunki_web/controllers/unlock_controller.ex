@@ -22,7 +22,8 @@ defmodule NunkiWeb.UnlockController do
     if through?(conn) do
       redirect(conn, to: "/")
     else
-      guess(conn, get_in(params, ["unlock", "pin"]))
+      # A body that is not `unlock[pin]` is a wrong guess like any other: counted.
+      guess(conn, with(%{"unlock" => %{"pin" => pin}} <- params, do: pin))
     end
   end
 

@@ -30,7 +30,7 @@ defmodule Nunki.AccessPin do
   @max 64
   @topic "access_pin"
 
-  @type reason :: :invalid_utf8 | :padded | :control | :too_short | :too_long
+  @type reason :: :invalid_utf8 | :padded | :control | :too_short | :too_long | :write
 
   # --- start-up --------------------------------------------------------------
 
@@ -63,9 +63,15 @@ defmodule Nunki.AccessPin do
         :persistent_term.put(@key, pin)
         pin
 
-      :error ->
+      {:error, why} ->
+        if why == :unusable do
+          Logger.warning(
+            "The access PIN file was not usable (not a plain file, or a PIN the rules refuse); a new random PIN replaced it."
+          )
+        end
+
         pin = random()
-        store!(pin)
+        store_anyway(pin)
         pin
     end
   end
@@ -145,8 +151,8 @@ defmodule Nunki.AccessPin do
   """
   @spec set(term()) :: :ok | {:error, reason()}
   def set(pin) do
-    with :ok <- validate(pin) do
-      store!(pin)
+    with :ok <- validate(pin),
+         :ok <- store(pin) do
       drop_sockets()
       :ok
     end
@@ -156,7 +162,7 @@ defmodule Nunki.AccessPin do
   @spec regenerate() :: String.t()
   def regenerate do
     pin = random()
-    store!(pin)
+    store_anyway(pin)
     drop_sockets()
     pin
   end
@@ -179,44 +185,82 @@ defmodule Nunki.AccessPin do
 
   # --- the file --------------------------------------------------------------
 
-  defp store!(pin) do
-    write_file!(pin)
+  # Writes the file, and only then puts the PIN in force. A file that cannot
+  # be written leaves the PIN as it was, and says so.
+  defp store(pin) do
+    with :ok <- write_file(pin) do
+      :persistent_term.put(@key, pin)
+    end
+  end
+
+  # For start-up and "a new random one": there is no old PIN worth keeping
+  # over a full disk, so the new one holds in memory even when the file
+  # cannot be written (until the next restart, which says so in the log).
+  defp store_anyway(pin) do
+    with {:error, _write} <- write_file(pin) do
+      Logger.warning(
+        "The access PIN could not be written to #{@file_name}; it holds until Nunki restarts."
+      )
+    end
+
     :persistent_term.put(@key, pin)
+    :ok
   end
 
   defp read_file do
     path = path()
 
-    with {:ok, %File.Stat{type: :regular}} <- File.lstat(path),
-         {:ok, content} <- File.read(path),
-         pin = String.trim_trailing(content, "\n"),
-         :ok <- validate(pin) do
-      {:ok, pin}
-    else
-      _unusable -> :error
+    case File.lstat(path) do
+      {:error, :enoent} ->
+        {:error, :missing}
+
+      {:ok, %File.Stat{type: :regular}} ->
+        with {:ok, content} <- File.read(path),
+             # A line ending from a Windows editor is not part of the PIN.
+             pin = content |> String.replace_suffix("\n", "") |> String.replace_suffix("\r", ""),
+             :ok <- validate(pin) do
+          {:ok, pin}
+        else
+          _unusable -> {:error, :unusable}
+        end
+
+      _symlink_or_worse ->
+        {:error, :unusable}
     end
   end
 
   # `access-pin.new` is made empty and exclusively (a symlink in its place is
   # an error, not a path to follow), set to 0600 before the PIN goes in, and
   # renamed over the real file. A symlink at the real name is removed first.
-  defp write_file!(pin) do
+  defp write_file(pin) do
     path = path()
     tmp = path <> ".new"
 
     File.rm(tmp)
-    if match?({:ok, %File.Stat{type: :symlink}}, File.lstat(path)), do: File.rm!(path)
+    if match?({:ok, %File.Stat{type: :symlink}}, File.lstat(path)), do: File.rm(path)
 
-    {:ok, io} = File.open(tmp, [:write, :exclusive, :binary])
+    with {:ok, io} <- File.open(tmp, [:write, :exclusive, :binary]) do
+      written =
+        try do
+          with :ok <- File.chmod(tmp, 0o600),
+               :ok <- IO.binwrite(io, pin <> "\n") do
+            :file.sync(io)
+          end
+        after
+          File.close(io)
+        end
 
-    try do
-      File.chmod!(tmp, 0o600)
-      IO.binwrite(io, pin <> "\n")
-    after
-      File.close(io)
+      with :ok <- written,
+           :ok <- File.rename(tmp, path) do
+        :ok
+      else
+        _failed ->
+          File.rm(tmp)
+          {:error, :write}
+      end
+    else
+      _no_file -> {:error, :write}
     end
-
-    File.rename!(tmp, path)
   end
 
   # --- the box's request -----------------------------------------------------
@@ -250,13 +294,13 @@ defmodule Nunki.AccessPin do
   defp apply_request({:ok, content}) do
     case content |> String.replace("\r\n", "\n") |> String.split("\n") do
       ["new" | rest] when rest in [[], [""]] ->
-        store!(random())
+        store_anyway(random())
         :new
 
       ["set", pin | rest] when rest in [[], [""]] ->
         case validate(pin) do
           :ok ->
-            store!(pin)
+            store_anyway(pin)
             :set
 
           {:error, reason} ->

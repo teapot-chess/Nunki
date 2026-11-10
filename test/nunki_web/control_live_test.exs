@@ -333,6 +333,46 @@ defmodule NunkiWeb.ControlLiveTest do
     Countdown.cancel(id)
   end
 
+  test "a Linux update that failed says so, instead of 'reconnects by itself' for ever" do
+    path = Path.join(System.tmp_dir!(), "nunki-status-#{System.unique_integer([:positive])}")
+    dir = Path.join(System.tmp_dir!(), "nunki-req-#{System.unique_integer([:positive])}")
+    old_data = Application.fetch_env!(:nunki, :data_dir)
+    Application.put_env(:nunki, :data_dir, dir)
+    File.mkdir_p!(Path.join(dir, "update"))
+    Application.put_env(:nunki, :install_kind, :systemd)
+    Application.put_env(:nunki, :update_status_file, path)
+    Application.put_env(:nunki, :update_poll_ms, 10)
+
+    Nunki.Updates.Checker.put(%{
+      version: "9.9.9",
+      tag: "v9.9.9",
+      url: "https://example.invalid",
+      size: nil,
+      asset: "nunki-linux-x86_64.tar.gz",
+      no_build: false
+    })
+
+    on_exit(fn ->
+      Nunki.Updates.Checker.forget()
+      Application.put_env(:nunki, :install_kind, :manual)
+      Application.put_env(:nunki, :data_dir, old_data)
+      Application.delete_env(:nunki, :update_status_file)
+      Application.delete_env(:nunki, :update_poll_ms)
+      File.rm(path)
+      File.rm_rf(dir)
+    end)
+
+    {:ok, view, _html} = live(local_conn(), "/")
+    view |> element("#update-apply") |> render_click()
+    assert has_element?(view, "#update-going")
+
+    File.write!(path, "failed 9.9.9 the download did not succeed; nothing was changed\n")
+
+    assert eventually(fn -> has_element?(view, "#update-failed") end)
+    refute has_element?(view, "#update-going")
+    assert has_element?(view, "#update-apply")
+  end
+
   test "Start with Windows is offered only to an installed Windows copy" do
     {:ok, view, _html} = live(local_conn(), "/")
     # config/test.exs: install_kind is :manual.

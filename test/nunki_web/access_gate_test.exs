@@ -93,6 +93,11 @@ defmodule NunkiWeb.AccessGateTest do
                "/unlock"
     end
 
+    test "a body that is not unlock[pin] is a wrong guess, not a crash" do
+      conn = post(remote_conn(), "/unlock", %{"unlock" => "x"})
+      assert html_response(conn, 401)
+    end
+
     test "the right PIN opens every page, and the session holds a stamp, not the PIN" do
       conn = unlock()
       assert redirected_to(conn) == "/"

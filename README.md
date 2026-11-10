@@ -127,6 +127,11 @@ one; it cannot be removed). This machine's own browser is never asked; with
 `lan`, every other computer is, for every page including the hall screen
 (a TV's browser enters it once). Five wrong guesses make an address wait,
 longer each time, and changing the PIN logs every other browser out. A
+box without a screen has no control page to read it from: the Linux installer
+prints it when it is done (also with `--lan`), and
+`sudo cat /var/lib/nunki/access-pin` shows it whenever you need it. The pages
+are plain HTTP, so the PIN keeps casual visitors out; it is not protection
+against somebody listening in on the hall's Wi-Fi. A
 Raspberry Pi image can set the PIN before Nunki starts by leaving
 `pin-request` in the data folder (`set` and the PIN on the next line, or
 `new`); Nunki applies it, deletes it, and never logs the PIN.

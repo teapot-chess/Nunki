@@ -80,8 +80,11 @@ if config_env() == :prod do
 
         _missing ->
           secret = 48 |> :crypto.strong_rand_bytes() |> Base.encode64()
-          File.write!(secret_file, secret)
+          # Empty and private first, the secret after: it is never in a file
+          # anybody else may read, not even for a moment.
+          File.write!(secret_file, "")
           File.chmod(secret_file, 0o600)
+          File.write!(secret_file, secret)
           secret
       end
 
