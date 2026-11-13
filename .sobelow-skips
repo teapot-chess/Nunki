@@ -6,18 +6,22 @@ Traversal.FileModule: Directory Traversal in `File.chmod`,lib/nunki/access_pin.e
 Traversal.FileModule: Directory Traversal in `File.chmod`,lib/nunki/launcher_details.ex:152,7D8F700
 Traversal.FileModule: Directory Traversal in `File.chmod`,lib/nunki/launcher_details.ex:157,61B4546
 Traversal.FileModule: Directory Traversal in `File.chmod`,lib/nunki/store.ex:275,1B5E08B
+Traversal.FileModule: Directory Traversal in `File.chmod`,lib/nunki/store.ex:288,11DC76D
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/nunki/application.ex:8,67F4A29
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/nunki/paths.ex:24,2E8A923
 Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/nunki/store.ex:269,4D8CF3
+Traversal.FileModule: Directory Traversal in `File.mkdir_p!`,lib/nunki/store.ex:282,5FF0A3D
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/nunki/launcher_details.ex:151,32E07A4
 Traversal.FileModule: Directory Traversal in `File.mkdir_p`,lib/nunki/updates.ex:371,3DF9D77
 Traversal.FileModule: Directory Traversal in `File.open`,lib/nunki/access_pin.ex:242,78EFB8A
 Traversal.FileModule: Directory Traversal in `File.open`,lib/nunki/launcher_details/cli.ex:223,4FAB5B0
 Traversal.FileModule: Directory Traversal in `File.open`,lib/nunki/store.ex:289,539A299
+Traversal.FileModule: Directory Traversal in `File.open`,lib/nunki/store.ex:302,1BD5A6E
 Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/access_pin.ex:218,7AFF477
 Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/access_pin.ex:279,3661FDD
 Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/launcher_details/cli.ex:265,490F0DA
 Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/store.ex:212,3FCF542
+Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/store.ex:225,359E0E2
 Traversal.FileModule: Directory Traversal in `File.read`,lib/nunki/updates.ex:407,1C8FA6D
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:239,1DC1B13
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:240,5C01086
@@ -25,6 +29,7 @@ Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:2
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:280,9A7B48
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/access_pin.ex:285,2E99A87
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/application.ex:78,2E826B6
+Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/application.ex:80,442A6B5
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/launcher_details.ex:127,2756187
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/voice.ex:215,3B33378
 Traversal.FileModule: Directory Traversal in `File.rm`,lib/nunki/voice.ex:233,7953BDC
@@ -34,7 +39,9 @@ Traversal.FileModule: Directory Traversal in `File.write!`,lib/nunki/voice.ex:19
 Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/launcher_details.ex:156,376EC81
 Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/launcher_details.ex:158,3773433
 Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/store.ex:274,5CA323B
+Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/store.ex:287,859D6C
 Traversal.FileModule: Directory Traversal in `File.write`,lib/nunki/updates.ex:372,5BE8398
 XSS.Raw: XSS,lib/nunki_web/components/core_components.ex:16,72CE8FD
 XSS.Raw: XSS,lib/nunki_web/components/core_components.ex:53,2CBCE5D
+XSS.Raw: XSS,lib/nunki_web/components/core_components.ex:56,4E2BAAA
 XSS.SendResp: XSS in `send_resp`,lib/nunki_web/endpoint.ex:58,1B3A0F3
