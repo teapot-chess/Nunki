@@ -136,9 +136,17 @@ Raspberry Pi image can set the PIN before Nunki starts by leaving
 `pin-request` in the data folder (`set` and the PIN on the next line, or
 `new`); Nunki applies it, deletes it, and never logs the PIN.
 Either way Nunki answers only to its own names: `localhost`, `127.0.0.1`,
-`PHX_HOST` and, with `lan`, the machine's host name and addresses. A request
+`PHX_HOST` and, with `lan`, the machine's host name and addresses (read at
+every request, so an address that turns up later works) and its own
+Tailscale name and addresses (asked of the local Tailscale daemon every 15
+seconds). A request
 for any other host (a web page that pointed its own name at this machine, or
 a reverse proxy that forwards one) gets a 403.
+
+**Sound off.** The control page has a sound switch; off means nothing is
+said and nothing is kept to say later. `NUNKI_AUDIO=off` makes a fresh
+install start with it off (a Pi that is a display first); once somebody
+uses the switch, that choice is kept.
 
 ## Sound on Linux: an open question
 
@@ -197,11 +205,20 @@ so.
   words, Remove. The join field. The language of the
   announcements (follow the tournament, English, Nederlands), the voice per
   language and "Test voice", "Read the pairings when they are published",
-  Stop.
+  Stop. At the top, the two hall screens side by side - Live, Paused or
+  Black, which tournament each shows, a preview - the sound switch and
+  "Identify the screens". On a wide monitor it is a management display in
+  two columns.
 - **`/hall`, the hall screen.** Dark, full screen: during a countdown the
   minutes in very large digits, then "Round 3 has started"; otherwise the
-  latest pairings; the last announcement, for a minute and a half, above all of it; at the bottom, the line being said. `?t=<id>` picks a
-  tournament.
+  latest pairings; the last announcement, for a minute and a half, above all of it; at the bottom, the line being said. `?screen=hdmi2` is
+  the second screen (plain `/hall` is `hdmi1`); each has its own mode
+  (live, paused: frozen on what it shows, black: nothing at all) and its own
+  tournament, kept across restarts. `?t=<id>` picks a tournament whatever
+  the screen was told.
+- **`/api/local/v1`**, a JSON API for programs on this machine only (the
+  Raspberry Pi image's touch menu): the screens, the sound, identify, stop.
+  See [docs/local-api.md](docs/local-api.md).
 - **`/help`**, the manual, English and Dutch.
 
 ## Building

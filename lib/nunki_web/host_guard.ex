@@ -19,7 +19,13 @@ defmodule NunkiWeb.HostGuard do
   The list is `localhost`, `127.0.0.1`, `::1`, the host in the endpoint's `url`
   (`PHX_HOST`), and, only when `config :nunki, listen: :lan` says the station
   was told to listen on the network, this machine's own host name (also with
-  `.local`) and every address of its interfaces. `config :nunki, extra_hosts: [...]`
+  `.local`) and every address of its interfaces. Both are read at every request,
+  so an address that appears after the start (Tailscale coming up late, a
+  new DHCP lease) is answered at once. With `lan`, also this machine's own
+  Tailscale name and addresses, as its Tailscale daemon says them
+  (`NunkiWeb.Tailnet`, refreshed every 15 seconds) - never a pattern such
+  as "anything under .ts.net", which would be a name a stranger could point
+  at 127.0.0.1. `config :nunki, extra_hosts: [...]`
   adds names for the tests.
   """
   @behaviour Plug
@@ -63,7 +69,12 @@ defmodule NunkiWeb.HostGuard do
     configured = Application.get_env(:nunki, NunkiWeb.Endpoint, [])[:url][:host]
     extra = Application.get_env(:nunki, :extra_hosts, [])
     base = @loopback ++ List.wrap(configured) ++ extra
-    base = if Application.get_env(:nunki, :listen) == :lan, do: base ++ lan_hosts(), else: base
+
+    base =
+      if Application.get_env(:nunki, :listen) == :lan,
+        do: base ++ lan_hosts() ++ NunkiWeb.Tailnet.names(),
+        else: base
+
     Enum.map(base, &normalize/1)
   end
 

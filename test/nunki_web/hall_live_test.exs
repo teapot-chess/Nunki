@@ -93,4 +93,91 @@ defmodule NunkiWeb.HallLiveTest do
     {:ok, view, _html} = live(local_conn(), "/hall")
     refute has_element?(view, "#hall-announcement")
   end
+
+  describe "modes" do
+    test "black: nothing at all, and it follows a change at once" do
+      tournament("Open A", payload(3))
+      {:ok, view, _html} = live(local_conn(), "/hall")
+      assert has_element?(view, "#hall-pairings")
+
+      Nunki.Hall.put_mode("hdmi1", "black")
+      eventually(fn -> has_element?(view, "#hall-black") end)
+      refute has_element?(view, "#hall-pairings")
+      refute has_element?(view, "#fullscreen")
+
+      assert view
+             |> element("#hall-black")
+             |> render()
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.text()
+             |> String.trim() == ""
+
+      Nunki.Hall.put_mode("hdmi1", "live")
+      eventually(fn -> has_element?(view, "#hall-pairings") end)
+      assert has_element?(view, "#board-1")
+    end
+
+    test "paused: stays on what it showed, until live again" do
+      id = tournament("Open A", payload(3))
+      {:ok, view, _html} = live(local_conn(), "/hall")
+      Nunki.Hall.put_mode("hdmi1", "paused")
+      eventually(fn -> has_element?(view, "#hall[data-mode=paused]") end)
+
+      {:ok, _} = Countdown.start(id, 4, 300)
+      Store.update_tournament(id, &Map.put(&1, "round", payload(4)))
+      _ = render(view)
+      refute has_element?(view, "#hall-countdown")
+      assert view |> element("#hall-pairings h1") |> render() =~ "Round 3"
+
+      Nunki.Hall.put_mode("hdmi1", "live")
+      eventually(fn -> has_element?(view, "#hall-countdown") end)
+    end
+
+    test "each screen has its own mode; ?screen= says which this is" do
+      tournament("Open A", payload(3))
+      Nunki.Hall.put_mode("hdmi2", "black")
+
+      {:ok, one, _html} = live(local_conn(), "/hall")
+      {:ok, two, _html} = live(local_conn(), "/hall?screen=hdmi2")
+      assert has_element?(one, "#hall-pairings")
+      assert has_element?(two, "#hall-black")
+
+      Nunki.Hall.put_mode("hdmi1", "black")
+      eventually(fn -> has_element?(one, "#hall-black") end)
+      Nunki.Hall.put_mode("hdmi2", "live")
+      eventually(fn -> has_element?(two, "#hall-pairings") end)
+    end
+
+    test "a screen's chosen tournament is shown without ?t=, and ?t= still beats it" do
+      a = tournament("Open A", payload(1))
+      b = tournament("Open B", payload(2))
+      # The automatic pick is the first joined; choose the other one.
+      {auto, other, other_round, auto_round} =
+        if hd(Store.tournaments())["id"] == a,
+          do: {a, b, "Round 2", "Round 1"},
+          else: {b, a, "Round 1", "Round 2"}
+
+      {:ok, view, _html} = live(local_conn(), "/hall")
+      assert view |> element("#hall-pairings h1") |> render() =~ auto_round
+
+      Nunki.Hall.put_tournament("hdmi1", other)
+      eventually(fn -> view |> element("#hall-pairings h1") |> render() =~ other_round end)
+
+      {:ok, view, _html} = live(local_conn(), "/hall?t=#{auto}")
+      assert view |> element("#hall-pairings h1") |> render() =~ auto_round
+    end
+
+    test "identify: the screen's number, over anything, black included" do
+      Nunki.Hall.put_mode("hdmi2", "black")
+      {:ok, one, _html} = live(local_conn(), "/hall")
+      {:ok, two, _html} = live(local_conn(), "/hall?screen=hdmi2")
+
+      Nunki.Hall.identify()
+      eventually(fn -> has_element?(one, "#hall-identify", "1") end)
+      eventually(fn -> has_element?(two, "#hall-identify", "2") end)
+
+      send(one.pid, :identify_done)
+      eventually(fn -> not has_element?(one, "#hall-identify") end)
+    end
+  end
 end

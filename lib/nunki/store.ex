@@ -92,6 +92,14 @@ defmodule Nunki.Store do
 
   def put_setting(key, value) when is_binary(key), do: call({:put_setting, key, value})
 
+  @doc """
+  Changes one setting with `fun` (the current value, nil when unset, in; the
+  new value out), in one step: two pages changing the same setting at once
+  do not undo each other. Returns the new value.
+  """
+  def update_setting(key, fun) when is_binary(key) and is_function(fun, 1),
+    do: call({:update_setting, key, fun})
+
   @doc "Starts again from the file on disk, or from nothing (tests)."
   def reload, do: call(:reload)
 
@@ -196,6 +204,11 @@ defmodule Nunki.Store do
 
   def handle_call({:put_setting, key, value}, _from, state) do
     {:reply, :ok, save(state, put_in(state.data, ["settings", key], value))}
+  end
+
+  def handle_call({:update_setting, key, fun}, _from, state) do
+    value = fun.(get_in(state.data, ["settings", key]))
+    {:reply, value, save(state, put_in(state.data, ["settings", key], value))}
   end
 
   def handle_call(:reload, _from, state) do

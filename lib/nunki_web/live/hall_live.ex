@@ -5,39 +5,74 @@ defmodule NunkiWeb.HallLive do
   has started"), the latest pairings when there is not, and the line Nunki
   is saying at the bottom.
 
-  `?t=<id>` shows one tournament. Without it: the one whose countdown runs,
-  else the first joined. It is in the tournament's announcement language,
-  not the page's: the people reading it are the ones being announced to.
+  `?screen=hdmi1|hdmi2` says which of the box's screens this is (`/hall`
+  alone is `hdmi1`); each has its own mode and tournament (`Nunki.Hall`).
+  `?t=<id>` shows one tournament whatever the screen was told. Without
+  either: the one whose countdown runs, else the first joined. It is in the
+  tournament's announcement language, not the page's: the people reading it
+  are the ones being announced to.
+
+  The modes:
+
+    * `live` - everything above, as it changes;
+    * `paused` - what the screen showed when it was paused stays, clock and
+      all, until it is live again. A page opened while paused shows what is
+      there at that moment and then stays put. Speech is not paused;
+    * `black` - nothing: no text, no button, no cursor. What changes
+      meanwhile is followed, out of sight, so that going live (or paused)
+      from black shows the present, not the moment the lights went out.
 
   The screen is a convenience. Nunki speaks whether it is open or not;
   that is the whole point of speaking through the system rather than
-  through a browser tab (see the README).
+  through a browser tab (see the README). With the sound switched off,
+  nothing is said, so the line at the bottom stays away too; the pairings,
+  the countdown and the announcements are still shown.
   """
   use NunkiWeb, :live_view
 
-  alias Nunki.{Announcer, Countdown, Speaker, Store}
+  alias Nunki.{Announcer, Countdown, Hall, Speaker, Store}
   alias NunkiWeb.Words
 
   @impl true
   def mount(params, _session, socket) do
     if connected?(socket), do: Nunki.subscribe()
+    screen = Hall.screen_name(params["screen"])
+    setting = Hall.screen(screen)
 
     {:ok,
      socket
-     |> assign(page_title: gettext("Hall screen"), wanted: params["t"], ticking?: false)
+     |> assign(
+       page_title: gettext("Hall screen"),
+       wanted: params["t"],
+       screen: screen,
+       mode: setting["mode"],
+       chosen: setting["tournament"],
+       identify?: false,
+       ticking?: false
+     )
      |> stream_configure(:boards, dom_id: &"board-#{&1["board"]}")
      |> load()}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
+    screen = Hall.screen_name(params["screen"])
+
+    socket =
+      if screen == socket.assigns.screen do
+        socket
+      else
+        setting = Hall.screen(screen)
+        assign(socket, screen: screen, mode: setting["mode"], chosen: setting["tournament"])
+      end
+
     {:noreply, socket |> assign(wanted: params["t"]) |> load()}
   end
 
   defp load(socket) do
     tournaments = Store.tournaments()
     countdowns = Countdown.all()
-    t = pick(tournaments, countdowns, socket.assigns.wanted)
+    t = Hall.pick(tournaments, countdowns, socket.assigns.wanted, socket.assigns.chosen)
     id = t && t["id"]
     lang = if t, do: Announcer.language(id), else: socket.assigns.locale
     Gettext.put_locale(NunkiWeb.Gettext, lang)
@@ -59,15 +94,6 @@ defmodule NunkiWeb.HallLive do
     )
     |> stream(:boards, (payload && payload["boards"]) || [], reset: true)
     |> tick(countdown != nil or announcement_recent?(t))
-  end
-
-  # The asked-for tournament; else the one with a countdown still to run,
-  # else one that has just started, else the first.
-  defp pick(tournaments, countdowns, wanted) do
-    Enum.find(tournaments, &(&1["id"] == wanted)) ||
-      Enum.find(tournaments, &match?(%{started?: false}, countdowns[&1["id"]])) ||
-      Enum.find(tournaments, &Map.has_key?(countdowns, &1["id"])) ||
-      List.first(tournaments)
   end
 
   @announcement_show_s 90
@@ -101,16 +127,63 @@ defmodule NunkiWeb.HallLive do
   defp tick(socket, false), do: socket
 
   @impl true
+  # This screen was told something. Out of black or into pause, the page is
+  # read again: black followed nothing visible, and a pause holds what is
+  # there now. Into black nothing needs reading.
+  def handle_info({:hall_screen, screen, setting}, %{assigns: %{screen: screen}} = socket) do
+    before = socket.assigns
+    socket = assign(socket, mode: setting["mode"], chosen: setting["tournament"])
+
+    reload? =
+      case setting["mode"] do
+        "live" -> true
+        "paused" -> before.mode == "black"
+        "black" -> false
+      end
+
+    {:noreply, if(reload?, do: load(socket), else: socket)}
+  end
+
+  def handle_info({:hall_screen, _other_screen, _setting}, socket), do: {:noreply, socket}
+
+  def handle_info({:identify, ms}, socket) do
+    Process.send_after(self(), :identify_done, ms)
+    {:noreply, assign(socket, identify?: true)}
+  end
+
+  def handle_info(:identify_done, socket), do: {:noreply, assign(socket, identify?: false)}
+
+  # Paused: nothing moves, the clock included.
+  def handle_info(_changed, %{assigns: %{mode: "paused"}} = socket),
+    do: {:noreply, assign(socket, ticking?: false)}
+
   def handle_info(:tick, socket), do: {:noreply, socket |> assign(ticking?: false) |> load()}
 
   def handle_info({:speaker, status}, socket), do: {:noreply, assign(socket, speaker: status)}
   def handle_info(_changed, socket), do: {:noreply, load(socket)}
 
   @impl true
+  def render(%{mode: "black"} = assigns) do
+    ~H"""
+    <Layouts.hall flash={%{}}>
+      <div id="hall-black" class="hall-black" data-screen={@screen}>
+        <.identify :if={@identify?} screen={@screen} />
+      </div>
+    </Layouts.hall>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.hall flash={@flash}>
-      <div id="hall" class="hall" lang={@lang}>
+      <div
+        id="hall"
+        class={["hall", @mode == "paused" && "is-paused"]}
+        lang={@lang}
+        data-screen={@screen}
+        data-mode={@mode}
+      >
+        <.identify :if={@identify?} screen={@screen} />
         <header class="hall-top">
           <span class="hall-brand"><.logo /> <span>{@name}</span></span>
           <button
@@ -192,6 +265,17 @@ defmodule NunkiWeb.HallLive do
         </footer>
       </div>
     </Layouts.hall>
+    """
+  end
+
+  attr :screen, :string, required: true
+
+  # The screen's number, as large as the screen: which monitor is which.
+  defp identify(assigns) do
+    ~H"""
+    <div id="hall-identify" class="hall-identify" aria-hidden="true">
+      {String.replace_prefix(@screen, "hdmi", "")}
+    </div>
     """
   end
 

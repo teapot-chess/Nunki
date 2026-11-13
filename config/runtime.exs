@@ -35,6 +35,14 @@ if config_env() != :test do
     http: [ip: listen, port: String.to_integer(System.get_env("PORT", "4062"))]
 end
 
+# Whether Nunki speaks before anybody chose (`Nunki.Hall.audio?/0`): on,
+# unless NUNKI_AUDIO=off - a box whose speakers are not plugged in yet, or a
+# Pi that starts as a display first. Only the default: a choice made on the
+# control page or through the local API is kept and wins.
+if String.downcase(System.get_env("NUNKI_AUDIO", "")) in ["off", "0", "false", "no"] do
+  config :nunki, audio_default: false
+end
+
 # The machine's own voice in development, when asked for. Production always
 # has it (no voice_backend set means: the one for this system).
 if config_env() == :dev and System.get_env("NUNKI_VOICE") == "os" do

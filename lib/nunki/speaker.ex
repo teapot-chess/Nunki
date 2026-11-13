@@ -3,7 +3,8 @@ defmodule Nunki.Speaker do
   The mouth: a queue of utterances, said one at a time, each by one OS
   process (`Nunki.Voice.start/3`).
 
-  `say/3` puts lines at the end of the queue; `stop/0` empties it and kills
+  `say/3` puts lines at the end of the queue (or nowhere, with the sound
+  switched off: `Nunki.Hall.audio?/0`); `stop/0` empties it and kills
   what is being said - the program and anything it started. A line that
   takes longer than a minute is taken for a voice that hung and is stopped
   the same way: no single board pairing takes a minute to read, and a stuck
@@ -55,6 +56,18 @@ defmodule Nunki.Speaker do
 
   @impl true
   def handle_cast({:say, lines, lang, tournament}, state) do
+    if audio?(), do: queue(lines, lang, tournament, state), else: {:noreply, state}
+  end
+
+  # The sound switched off (`Nunki.Hall`): nothing is queued, nothing is said
+  # later. A store that does not answer is not a reason to go quiet.
+  defp audio? do
+    Nunki.Hall.audio?()
+  catch
+    :exit, _not_running -> true
+  end
+
+  defp queue(lines, lang, tournament, state) do
     queue =
       Enum.reduce(lines, state.queue, fn line, queue ->
         :queue.in(%{text: line, lang: lang, tournament: tournament}, queue)

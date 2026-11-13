@@ -13,14 +13,15 @@ defmodule NunkiWeb.Local do
 
   import Plug.Conn
 
-  @forwarding ~w(x-forwarded-for forwarded x-real-ip cf-connecting-ip x-forwarded-host)
+  # `tailscale serve` on this machine makes every tailnet visitor a loopback
+  # peer too; it says so with its own headers.
+  @forwarding ~w(x-forwarded-for forwarded x-real-ip cf-connecting-ip x-forwarded-host
+                 tailscale-user-login tailscale-user-name tailscale-headers-info)
 
   @spec request?(Plug.Conn.t()) :: boolean()
   def request?(conn) do
     loopback?(conn.remote_ip) and own_host?(conn.host) and not forwarded?(conn)
   end
-
-  defp forwarded?(conn), do: Enum.any?(@forwarding, &(get_req_header(conn, &1) != []))
 
   @doc "Whether `host` (a `Host` header without its port) names this machine and nothing else."
   @spec own_host?(term()) :: boolean()
@@ -47,8 +48,14 @@ defmodule NunkiWeb.Local do
     [name, name <> ".local"]
   end
 
-  defp loopback?({127, _, _, _}), do: true
-  defp loopback?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
-  defp loopback?({0, 0, 0, 0, 0, 65_535, 32_512, _}), do: true
-  defp loopback?(_other), do: false
+  @doc "Whether a peer address is this machine: 127.0.0.0/8, ::1, or 127.x mapped into IPv6."
+  @spec loopback?(:inet.ip_address() | term()) :: boolean()
+  def loopback?({127, _, _, _}), do: true
+  def loopback?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
+  def loopback?({0, 0, 0, 0, 0, 65_535, a, _}) when a in 32_512..32_767, do: true
+  def loopback?(_other), do: false
+
+  @doc "Whether any proxy header says the request came from somewhere else."
+  @spec forwarded?(Plug.Conn.t()) :: boolean()
+  def forwarded?(conn), do: Enum.any?(@forwarding, &(get_req_header(conn, &1) != []))
 end

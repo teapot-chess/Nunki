@@ -122,6 +122,22 @@ defmodule NunkiWeb.AccessGateTest do
       assert redirected_to(conn) == "/hall?t=abc"
     end
 
+    test "a hall screen's ?screen= comes back too, and nothing else does" do
+      for {asked, back} <- [
+            {"/hall?screen=hdmi2", "/hall?screen=hdmi2"},
+            {"/hall?screen=hdmi2&t=abc", "/hall?screen=hdmi2&t=abc"},
+            {"/hall?screen=x&next=//evil.example", "/hall"}
+          ] do
+        conn =
+          get(remote_conn(), asked)
+          |> recycle()
+          |> Map.put(:remote_ip, @lan)
+          |> post("/unlock", %{"unlock" => %{"pin" => pin()}})
+
+        assert redirected_to(conn) == back, asked
+      end
+    end
+
     test "the wait is shown, and the right PIN is refused during it" do
       for _ <- 1..5, do: assert(html_response(unlock(remote_conn(), "000000"), 401))
 

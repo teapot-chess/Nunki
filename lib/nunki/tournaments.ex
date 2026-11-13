@@ -49,7 +49,9 @@ defmodule Nunki.Tournaments do
 
     stop_link(id)
     Countdown.cancel(id)
-    {Store.remove_tournament(id), told}
+    result = Store.remove_tournament(id)
+    Nunki.Hall.forget_tournament(id)
+    {result, told}
   end
 
   @doc """

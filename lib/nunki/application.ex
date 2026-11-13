@@ -40,7 +40,9 @@ defmodule Nunki.Application do
         # asking PowerShell takes a second or two and nobody should wait for it.
         Supervisor.child_spec({Task, &refresh_voices/0}, id: :voices),
         {Nunki.Updates.Checker, timer: Application.get_env(:nunki, :updates_timer, true)},
-        Nunki.LauncherDetails
+        Nunki.LauncherDetails,
+        # This machine's Tailscale name, for the host check (NUNKI_LISTEN=lan only).
+        NunkiWeb.Tailnet
       ] ++
       if(Application.get_env(:nunki, :start_links, true),
         do: [Supervisor.child_spec({Task, &Nunki.Tournaments.start_links/0}, id: :links)],
