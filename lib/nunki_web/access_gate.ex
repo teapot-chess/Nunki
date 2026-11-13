@@ -53,12 +53,17 @@ defmodule NunkiWeb.AccessGate do
     end
   end
 
+  # A hall screen opened with its screen and/or tournament: `t=<id>`,
+  # `screen=<name>`, either or both, and nothing else.
+  defp hall_query?(query),
+    do: query =~ ~r/\A(?:t|screen)=[A-Za-z0-9_\-]+(?:&(?:t|screen)=[A-Za-z0-9_\-]+)?\z/
+
   # Where to go once the PIN is given: one of our own pages, never what a
   # request said it wanted.
   defp remember_page(%Plug.Conn{method: "GET", request_path: path} = conn)
        when path in ["/", "/hall", "/help"] do
     page =
-      if path == "/hall" and conn.query_string =~ ~r/\At=[A-Za-z0-9_\-]+\z/,
+      if path == "/hall" and hall_query?(conn.query_string),
         do: path <> "?" <> conn.query_string,
         else: path
 
@@ -70,7 +75,7 @@ defmodule NunkiWeb.AccessGate do
   @doc "Where `/unlock` sends a browser that has just given the PIN."
   def return_path(conn) do
     case get_session(conn, "return_to") do
-      "/hall?t=" <> _ = page -> if page =~ ~r/\A\/hall\?t=[A-Za-z0-9_\-]+\z/, do: page, else: "/"
+      "/hall?" <> query = page -> if hall_query?(query), do: page, else: "/"
       page when page in ["/", "/hall", "/help"] -> page
       _none -> "/"
     end

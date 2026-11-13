@@ -24,6 +24,14 @@ A version without notes publishes nothing (the run says so and stays
 green). Until somebody writes that section, 0.1.0 is a version nobody can
 download, which is deliberate.
 
+A work-in-progress build can go out as a **pre-release**: start "Build and
+release" by hand on `main` with "Publish as a pre-release" ticked. It is
+tagged and published like any other, but it is not "latest": the update
+check (which reads `/releases/latest`) never offers it, and
+`releases/latest/download/<name>` keeps pointing at the last real release.
+Fetch it by tag: `releases/download/vX.Y.Z/<name>`, or
+`install.sh --version X.Y.Z` and `update.sh --version X.Y.Z`.
+
 Do not tag by hand. There is no way to un-release: a wrong release is
 followed by a right one with a higher number.
 

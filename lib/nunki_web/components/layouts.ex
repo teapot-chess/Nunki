@@ -32,6 +32,10 @@ defmodule NunkiWeb.Layouts do
   attr :locale, :string, default: "en"
   attr :page, :atom, values: [:control, :hall, :help], default: :control
 
+  attr :wide, :boolean,
+    default: false,
+    doc: "the control page: a management display, as wide as the screen allows"
+
   attr :update, :map,
     default: nil,
     doc: "`Nunki.Updates.notice/0`; the control page has its own, with the buttons"
@@ -40,7 +44,7 @@ defmodule NunkiWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <div class="frame">
+    <div class={["frame", @wide && "frame-wide"]}>
       <header id="top" class="top">
         <a href={~p"/"} class="brand" id="brand">
           <.logo />

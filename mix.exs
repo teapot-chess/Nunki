@@ -4,7 +4,7 @@ defmodule Nunki.MixProject do
   def project do
     [
       app: :nunki,
-      version: "0.6.0",
+      version: "0.7.0",
       package: [licenses: ["LicenseRef-Ms-RSL"]],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),

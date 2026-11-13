@@ -104,6 +104,21 @@ defmodule NunkiWeb.HelpLive do
           <p>
             Het scherm is een extraatje. Nunki spreekt ook als het niet openstaat.
           </p>
+
+          <p>
+            Bovenaan de bedieningspagina staan twee schermen, Scherm 1 en Scherm 2 (de twee HDMI-uitgangen van een kastje met twee monitoren;
+            <a href="/hall">/hall</a>
+            is Scherm 1, <a href="/hall?screen=hdmi2">/hall?screen=hdmi2</a>
+            Scherm 2). Elk heeft drie knoppen: <strong>Live</strong>
+            volgt alles, <strong>Bevroren</strong>
+            laat staan wat er nu op staat tot je weer op Live drukt (Nunki blijft wel spreken),
+            <strong>Zwart</strong>
+            maakt het scherm helemaal zwart, bijvoorbeeld tijdens de prijsuitreiking. "Toont" kiest welk toernooi het scherm toont; Automatisch is het toernooi dat aftelt, anders het eerste. "Schermen aanwijzen" zet een paar seconden een grote 1 of 2 op elk scherm, zodat je weet welke monitor welke is.
+          </p>
+
+          <p>
+            Met de schakelaar "Geluid aan" zet je Nunki stil: er wordt dan niets gezegd, en ook niets bewaard voor later. De schermen tonen nog alles.
+          </p>
         </section>
 
         <section id="manual-pin">
@@ -293,6 +308,21 @@ defmodule NunkiWeb.HelpLive do
 
           <p>
             The screen is an extra. Nunki speaks whether it is open or not.
+          </p>
+
+          <p>
+            At the top of the control page are two screens, Screen 1 and Screen 2 (the two HDMI outputs of a box with two monitors;
+            <a href="/hall">/hall</a>
+            is Screen 1, <a href="/hall?screen=hdmi2">/hall?screen=hdmi2</a>
+            Screen 2). Each has three buttons: <strong>Live</strong>
+            follows everything, <strong>Paused</strong>
+            keeps what is on it now until you press Live again (Nunki goes on speaking),
+            <strong>Black</strong>
+            makes it entirely black, for a prize-giving say. "Shows" picks the tournament it shows; Automatic is the one counting down, else the first. "Identify the screens" puts a large 1 or 2 on each for a few seconds, so you know which monitor is which.
+          </p>
+
+          <p>
+            The "Sound on" switch silences Nunki: nothing is said, and nothing is kept for later. The screens still show everything.
           </p>
         </section>
 

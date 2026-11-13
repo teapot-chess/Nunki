@@ -449,4 +449,75 @@ defmodule NunkiWeb.ControlLiveTest do
       assert html =~ "Geavanceerde functies tonen"
     end
   end
+
+  describe "the hall screens" do
+    test "both screens have their three buttons, the picker and the sound switch" do
+      {:ok, view, _html} = live(local_conn(), "/")
+
+      for screen <- ["hdmi1", "hdmi2"], mode <- ["live", "paused", "black"] do
+        assert has_element?(view, "#screen-#{screen}-#{mode}"), "#{screen} #{mode}"
+      end
+
+      assert has_element?(view, "#screen-hdmi1-live[aria-pressed=true]")
+      assert has_element?(view, "#screen-hdmi2-tournament-form")
+      assert has_element?(view, "#screen-hdmi2-open[href='/hall?screen=hdmi2']")
+      assert has_element?(view, "#audio-toggle[aria-checked=true]")
+      refute has_element?(view, "#audio-off")
+    end
+
+    test "a mode button sets that screen's mode" do
+      {:ok, view, _html} = live(local_conn(), "/")
+      view |> element("#screen-hdmi2-black") |> render_click()
+
+      assert Nunki.Hall.screen("hdmi2")["mode"] == "black"
+      assert Nunki.Hall.screen("hdmi1")["mode"] == "live"
+      assert has_element?(view, "#screen-hdmi2-black[aria-pressed=true]")
+      assert has_element?(view, "#screen-hdmi2.mode-black")
+    end
+
+    test "the picker chooses what a screen shows; Automatic gives it back" do
+      id = tournament(payload(2))
+      {:ok, view, _html} = live(local_conn(), "/")
+
+      view
+      |> form("#screen-hdmi1-tournament-form", %{"screen" => "hdmi1", "id" => id})
+      |> render_change()
+
+      assert Nunki.Hall.screen("hdmi1")["tournament"] == id
+
+      view
+      |> form("#screen-hdmi1-tournament-form", %{"screen" => "hdmi1", "id" => ""})
+      |> render_change()
+
+      assert Nunki.Hall.screen("hdmi1")["tournament"] == nil
+    end
+
+    test "the sound switch: off says so plainly, and nothing is said" do
+      {:ok, view, _html} = live(local_conn(), "/")
+      view |> element("#audio-toggle") |> render_click()
+
+      refute Nunki.Hall.audio?()
+      assert has_element?(view, "#audio-toggle[aria-checked=false]")
+      assert has_element?(view, "#audio-off")
+
+      Speaker.say(["nobody hears this"], "en")
+      _ = :sys.get_state(Speaker)
+      assert Fake.texts() == []
+    end
+
+    test "a change made elsewhere (the local API) is on the page at once" do
+      {:ok, view, _html} = live(local_conn(), "/")
+      Nunki.Hall.put_mode("hdmi1", "paused")
+      eventually(fn -> has_element?(view, "#screen-hdmi1-paused[aria-pressed=true]") end)
+      Nunki.Hall.put_audio(false)
+      eventually(fn -> has_element?(view, "#audio-off") end)
+    end
+
+    test "Identify asks every hall screen to show its number" do
+      Nunki.subscribe()
+      {:ok, view, _html} = live(local_conn(), "/")
+      view |> element("#identify") |> render_click()
+      assert_receive {:identify, _ms}
+    end
+  end
 end

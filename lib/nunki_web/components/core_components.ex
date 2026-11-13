@@ -27,6 +27,9 @@ defmodule NunkiWeb.CoreComponents do
     "error" => ~s|<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/>|,
     "play" => ~s|<path d="M8 5.5v13l10.5-6.5z"/>|,
     "stop" => ~s|<rect x="6.5" y="6.5" width="11" height="11" rx="1"/>|,
+    "pause" => ~s|<path d="M9 6v12M15 6v12"/>|,
+    "blank" =>
+      ~s|<rect x="3" y="4.5" width="18" height="12" rx="1.5" fill="currentColor"/><path d="M8.5 20h7M12 16.5V20"/>|,
     "speaker" =>
       ~s|<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>|,
     "timer" => ~s|<circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M9.5 3h5"/>|,

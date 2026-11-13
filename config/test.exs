@@ -18,6 +18,8 @@ config :nunki,
   # own `Nunki.LauncherDetails`.
   launcher_details: false,
   updates_timer: false,
+  # No `tailscale status` from the tests; they say what it would have answered.
+  tailnet: false,
   install_kind: :manual,
   # "Start with Windows" must not ask the registry of the machine the tests run on.
   autostart_cmd: &Nunki.NoReg.cmd/3,

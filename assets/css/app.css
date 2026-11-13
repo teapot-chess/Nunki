@@ -299,6 +299,112 @@ p { margin: 0.25rem 0; }
 }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .95em; }
 
+/* --- the management display: the control page on a monitor of its own ---------------- */
+
+.frame-wide { max-width: 1480px; }
+
+.control-cols, .col-main, .col-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+
+@media (min-width: 1100px) {
+  .control-cols { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
+}
+
+.screens-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.switch {
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px 6px 6px; min-height: 40px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.switch:hover { border-color: var(--accent); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.switch-track {
+  position: relative; width: 44px; height: 26px; border-radius: 999px;
+  background: var(--line); transition: background 0.2s;
+}
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.2s;
+}
+.switch.is-on .switch-track { background: var(--ok); }
+.switch.is-on .switch-thumb { transform: translateX(18px); }
+
+.mute-note {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
+  padding: 10px 14px; border-radius: var(--radius);
+  background: var(--bad-soft); color: var(--bad); font-weight: 550;
+}
+
+.screens { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+.screen-card {
+  display: grid; gap: 12px; padding: 14px; min-width: 0;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.screen-card.mode-live { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.screen-card.mode-paused { border-color: var(--accent); }
+.screen-card.mode-black { border-color: var(--ink-soft); }
+
+.screen-head { display: flex; align-items: center; gap: 12px; }
+.screen-title { flex: 1; min-width: 0; }
+.screen-num {
+  display: grid; place-items: center; flex: none;
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--ink); color: var(--paper); font-weight: 800; font-size: 1.25rem;
+}
+
+/* A small hall screen: what the big one shows, give or take the names. */
+.screen-preview {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; aspect-ratio: 16 / 7; padding: 12px; border-radius: 8px; overflow: hidden;
+  background: #0f0f0e; color: #f4f1ea; text-align: center;
+}
+.mode-black .screen-preview { background: #000; }
+.preview-label { color: #f0c46a; font-size: 0.95rem; }
+.preview-clock { font-size: clamp(1.6rem, 3.2vw, 2.6rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.preview-name { position: absolute; left: 10px; top: 8px; font-size: 0.78rem; opacity: 0.6; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preview-black { color: #55524c; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.preview-badge {
+  position: absolute; right: 8px; top: 8px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #0f0f0e; background: #f0c46a; border-radius: 999px; padding: 2px 8px;
+}
+
+.segmented {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px;
+  border-radius: 10px; background: var(--card); border: 1px solid var(--line);
+}
+.seg {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; font: inherit; font-weight: 600; color: var(--ink-soft);
+  background: transparent; border: 0; border-radius: 7px; cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.08s;
+}
+.seg:hover { color: var(--ink); background: var(--accent-soft); }
+.seg:active { transform: translateY(1px); }
+.seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg[aria-pressed="true"] { color: #fff; }
+.seg-live[aria-pressed="true"] { background: var(--ok); }
+.seg-paused[aria-pressed="true"] { background: var(--accent); }
+.seg-black[aria-pressed="true"] { background: #111; }
+
+.screen-pick .field select { min-height: 44px; }
+
+/* The hall screen told to be black: no text, no button, no cursor. */
+.hall-black { position: fixed; inset: 0; background: #000; cursor: none; }
+.hall.is-paused { cursor: none; }
+
+/* "Which monitor is this?" - the screen's number, as large as the screen. */
+.hall-identify {
+  position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.82); color: #f0c46a;
+  font: 800 min(70vh, 60vw) / 1 var(--font); pointer-events: none;
+  animation: rise 0.2s ease-out;
+}
+
+
 /* ==== compact-screen: 3.5 inch panels (480x320 landscape, 320x480 portrait). Only inside this media query;
    the big-screen layout above is untouched. ==== */
 @media (max-width: 520px), (max-height: 360px) {

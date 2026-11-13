@@ -30,6 +30,23 @@ defmodule NunkiWeb.Router do
     post "/locale", LocaleController, :set
   end
 
+  # The local control API (docs/local-api.md): this machine's own programs
+  # only - no session, no CSRF token, no PIN, because nobody else gets in.
+  pipeline :local_api do
+    plug NunkiWeb.Plugs.LocalOnly
+  end
+
+  scope "/api/local/v1", NunkiWeb do
+    pipe_through :local_api
+
+    get "/state", LocalApiController, :state
+    post "/screen", LocalApiController, :screen
+    post "/audio", LocalApiController, :audio
+    post "/hall_tournament", LocalApiController, :hall_tournament
+    post "/identify", LocalApiController, :identify
+    post "/stop", LocalApiController, :stop
+  end
+
   # Every page, behind the gate: the plug for the first request, `on_mount`
   # for the socket.
   scope "/", NunkiWeb do

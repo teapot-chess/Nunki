@@ -35,6 +35,10 @@ on:
         description: "Build, sign and notarise only the Mac apps; publish nothing (for testing the signing)"
         type: boolean
         default: false
+      prerelease:
+        description: "Publish as a pre-release: not \"latest\", so no installed copy and no install.sh without a version is offered it"
+        type: boolean
+        default: false
 
 # Off until December 2026 - restore these triggers to re-enable:
 # on:
@@ -791,6 +795,12 @@ jobs:
           body_path: release_notes.md
           files: dist/*
           fail_on_unmatched_files: true
+          # A pre-release (started by hand with the box ticked) is not
+          # "latest": the update check asks for /releases/latest and ignores
+          # pre-releases anyway, and releases/latest/download/<name> keeps
+          # pointing at the last real one. Fetch it by its tag.
+          prerelease: ${{ inputs.prerelease == true }}
+          make_latest: ${{ inputs.prerelease == true && 'false' || 'true' }}
 
       # GitHub has answered "500" to a release it then created anyway; the
       # action tried again and left empty drafts with the same tag. Only

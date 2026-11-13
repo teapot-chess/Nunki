@@ -15,6 +15,7 @@ defmodule NunkiWeb.ControlLive do
     Announcer,
     Autostart,
     Countdown,
+    Hall,
     Script,
     Speaker,
     Store,
@@ -77,11 +78,35 @@ defmodule NunkiWeb.ControlLive do
       install_kind: Updates.install_kind(),
       autostart?: Autostart.supported?() and Autostart.enabled?(),
       speech_form: speech_form(settings),
+      audio?: Hall.audio?(),
+      screens: screens(),
+      tournament_options: Enum.map(rows, &{&1.name, &1.id}),
       advanced?: settings["advanced"] == true,
       device_form: to_form(%{"name" => Store.device_name()}, as: :device)
     )
     |> stream(:tournaments, rows, reset: true)
     |> tick(Enum.any?(rows, & &1.countdown))
+  end
+
+  # The two broadcast screens, as the cards at the top show them.
+  defp screens do
+    tournaments = Store.tournaments()
+    countdowns = Countdown.all()
+
+    for {name, s} <- Enum.sort(Hall.all()) do
+      shown = Hall.pick(tournaments, countdowns, nil, s["tournament"])
+      payload = shown && shown["round"]
+
+      %{
+        name: name,
+        number: String.replace_prefix(name, "hdmi", ""),
+        mode: s["mode"],
+        tournament: s["tournament"],
+        shown_name: shown && get_in(shown, ["tournament", "name"]),
+        round: payload && payload["round"],
+        countdown: shown && countdowns[shown["id"]]
+      }
+    end
   end
 
   # `drafts` holds what is typed into a tournament's name and room fields and
@@ -307,6 +332,31 @@ defmodule NunkiWeb.ControlLive do
     {:noreply, load(socket)}
   end
 
+  def handle_event("screen_mode", %{"screen" => screen, "mode" => mode}, socket) do
+    Hall.put_mode(screen, mode)
+    {:noreply, load(socket)}
+  end
+
+  def handle_event("screen_tournament", %{"screen" => screen, "id" => id}, socket) do
+    case Hall.put_tournament(screen, if(id == "", do: nil, else: id)) do
+      :ok ->
+        {:noreply, load(socket)}
+
+      {:error, _why} ->
+        {:noreply, put_flash(socket, :error, gettext("That tournament is not joined here."))}
+    end
+  end
+
+  def handle_event("audio", params, socket) do
+    Hall.put_audio(params["on"] == "true")
+    {:noreply, load(socket)}
+  end
+
+  def handle_event("identify", _params, socket) do
+    Hall.identify()
+    {:noreply, socket}
+  end
+
   def handle_event("advanced", params, socket) do
     Store.put_setting("advanced", params["on"] == "true")
     {:noreply, load(socket)}
@@ -452,7 +502,7 @@ defmodule NunkiWeb.ControlLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} locale={@locale} page={:control}>
+    <Layouts.app flash={@flash} locale={@locale} page={:control} wide>
       <.update_banner
         :if={@update}
         update={@update}
@@ -489,415 +539,550 @@ defmodule NunkiWeb.ControlLive do
         </.button>
       </section>
 
-      <section id="tournaments-panel" class="panel">
+      <section id="screens-panel" class="panel screens-panel">
         <header class="panel-head">
-          <h2>{gettext("Tournaments")}</h2>
-          <.link navigate={~p"/hall"} id="hall-link" class="btn btn-ghost">
-            <.icon name="screen" />
-            <span>{gettext("Open the hall screen")}</span>
-          </.link>
-        </header>
-
-        <ul id="tournaments" class="tournaments" phx-update="stream">
-          <li id="tournaments-empty" class="empty">
-            {gettext(
-              "No tournament yet. In OpenPairings: the tournament's Settings → Hall announcer → Add an announcer. Paste the link below."
-            )}
-          </li>
-          <li :for={{dom_id, t} <- @streams.tournaments} id={dom_id} class="tournament">
-            <div class="t-main">
-              <span
-                class={["dot", if(t.up?, do: "up", else: "down")]}
-                title={if t.up?, do: gettext("Connected"), else: gettext("Not connected")}
-              ></span>
-              <div>
-                <h3 class="t-name">{t.name}</h3>
-                <p class="note">
-                  {t.server} · <span :if={t.up?}>{gettext("connected")}</span>
-                  <span :if={!t.up?} class="bad">{t.error || gettext("not connected")}</span>
-                </p>
-                <p class="note" id={"#{dom_id}-round"}>
-                  <%= if t.round do %>
-                    {gettext("Last pairings received: round %{round} of %{rounds}, %{boards} boards.",
-                      round: t.round,
-                      rounds: t.rounds || "?",
-                      boards: t.boards
-                    )}
-                  <% else %>
-                    {gettext("No pairings received yet.")}
-                  <% end %>
-                </p>
-              </div>
-            </div>
-
-            <.form
-              :if={@advanced?}
-              for={t.settings_form}
-              id={"#{dom_id}-settings"}
-              class="inline-form t-settings"
-              phx-change="announcer_draft"
-              phx-submit="announcer_save"
+          <h2>{gettext("Hall screens")}</h2>
+          <div class="screens-actions">
+            <button
+              id="audio-toggle"
+              type="button"
+              role="switch"
+              aria-checked={to_string(@audio?)}
+              class={["switch", @audio? && "is-on"]}
+              phx-click="audio"
+              phx-value-on={to_string(!@audio?)}
             >
-              <.input field={t.settings_form[:tournament]} type="hidden" />
-              <.input
-                field={t.settings_form[:name]}
-                label={gettext("Name")}
-                maxlength="60"
-                disabled={!t.up?}
-              />
-              <.input
-                :if={t.room_options}
-                field={t.settings_form[:room]}
-                type="select"
-                label={gettext("Room")}
-                options={t.room_options}
-                disabled={!t.up?}
-              />
-              <.input
-                :if={!t.room_options}
-                field={t.settings_form[:room]}
-                label={gettext("Room")}
-                maxlength="60"
-                disabled={!t.up?}
-              />
-              <.button id={"#{dom_id}-settings-save"} type="submit" disabled={!t.up?}>
-                {gettext("Save")}
-              </.button>
-              <p :if={!t.up?} id={"#{dom_id}-settings-down"} class="note">
-                {gettext("Name and room are changed while the line is up; OpenPairings keeps them.")}
-              </p>
-            </.form>
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+              <span>{if @audio?, do: gettext("Sound on"), else: gettext("Sound off")}</span>
+            </button>
+            <.button id="identify" variant="ghost" icon="screen" phx-click="identify">
+              {gettext("Identify the screens")}
+            </.button>
+          </div>
+        </header>
 
-            <div class="t-countdown">
-              <%= if t.countdown do %>
-                <p id={"#{dom_id}-countdown"} class="countdown-line">
-                  <.icon name="timer" />
-                  <%= if t.countdown.started? do %>
-                    {gettext("Round %{round} has started.", round: t.countdown.round)}
-                  <% else %>
-                    {gettext("Round %{round} starts in %{time}.",
-                      round: t.countdown.round,
-                      time: Words.clock(t.countdown.remaining_ms)
-                    )}
-                  <% end %>
-                </p>
-                <.button
-                  id={"#{dom_id}-cancel"}
-                  variant="ghost"
-                  phx-click="countdown_cancel"
-                  phx-value-id={t.id}
-                >
-                  {gettext("Cancel the countdown")}
-                </.button>
-              <% else %>
-                <form
-                  id={"#{dom_id}-countdown-form"}
-                  class="inline-form"
-                  phx-submit="countdown_start"
-                >
-                  <input type="hidden" name="tournament" value={t.id} />
-                  <.input
-                    id={"#{dom_id}-minutes"}
-                    type="select"
-                    name="minutes"
-                    value="5"
-                    label={gettext("Countdown")}
-                    options={minute_options()}
-                  />
-                  <.button
-                    id={"#{dom_id}-countdown-start"}
-                    type="submit"
-                    icon="timer"
-                    disabled={is_nil(t.round)}
-                  >
-                    {gettext("Start")}
-                  </.button>
-                </form>
-              <% end %>
-            </div>
+        <p :if={!@audio?} id="audio-off" class="mute-note" role="status">
+          <.icon name="speaker" />
+          {gettext(
+            "The sound is off: nothing is said, and nothing is kept to be said later. The screens still show everything."
+          )}
+        </p>
 
-            <div class="t-announce" id={"#{dom_id}-announce"}>
-              <p :if={t.announcement} id={"#{dom_id}-last-announcement"} class="note">
-                {gettext("Last announcement: %{text}", text: t.announcement)}
-              </p>
-              <div class="t-actions">
-                <.button
-                  :for={key <- Nunki.Script.canned_keys()}
-                  id={"#{dom_id}-canned-#{key}"}
-                  variant="ghost"
-                  phx-click="announce_canned"
-                  phx-value-tournament={t.id}
-                  phx-value-canned={key}
-                >
-                  {canned_label(key)}
-                </.button>
-              </div>
-              <form
-                id={"#{dom_id}-announce-form"}
-                class="inline-form"
-                phx-submit="announce_text"
-              >
-                <input type="hidden" name="announce[tournament]" value={t.id} />
-                <.input
-                  id={"#{dom_id}-announce-text"}
-                  type="text"
-                  name="announce[text]"
-                  value=""
-                  label={gettext("Announce")}
-                  maxlength="300"
-                />
-                <.button id={"#{dom_id}-announce-send"} type="submit" icon="play">
-                  {gettext("Say it")}
-                </.button>
-              </form>
-            </div>
-
-            <div class="t-actions">
-              <.button
-                id={"#{dom_id}-read"}
-                icon="play"
-                phx-click="read"
-                phx-value-id={t.id}
-                disabled={is_nil(t.round)}
-              >
-                {gettext("Read now")}
-              </.button>
-              <.link navigate={~p"/hall?t=#{t.id}"} id={"#{dom_id}-hall"} class="btn btn-ghost">
-                <.icon name="screen" />
-                <span>{gettext("Hall screen")}</span>
-              </.link>
-              <.button
-                id={"#{dom_id}-remove"}
-                icon="trash"
-                variant="ghost"
-                phx-click="remove"
-                phx-value-id={t.id}
-                data-confirm={
-                  if t.up?,
-                    do:
-                      gettext(
-                        "Remove this tournament from Nunki? OpenPairings is told, and nothing more is announced for it here."
-                      ),
-                    else:
-                      gettext(
-                        "Remove this tournament from Nunki? The line is down, so OpenPairings is NOT told: remove this device there too. Nothing more is announced for it here."
-                      )
-                }
-              >
-                {gettext("Remove")}
-              </.button>
-            </div>
-          </li>
-        </ul>
-
-        <.form
-          for={@join_form}
-          id="join-form"
-          class="join"
-          phx-change="join_change"
-          phx-submit="join"
-        >
-          <.input
-            field={@join_form[:link]}
-            type="url"
-            label={gettext("Join a tournament")}
-            placeholder="https://.../p/nunki/join/..."
-            autocomplete="off"
-            spellcheck="false"
-            hint={
-              gettext(
-                "The link from OpenPairings: the tournament's Settings → Hall announcer → Add an announcer. Good once, for fifteen minutes."
-              )
-            }
-          />
-          <p :if={@join_error} id="join-error" class="bad" role="alert">{@join_error}</p>
-          <.button
-            id="join-button"
-            type="submit"
-            variant="primary"
-            icon="link"
-            phx-disable-with={gettext("Joining...")}
+        <div class="screens">
+          <article
+            :for={s <- @screens}
+            id={"screen-#{s.name}"}
+            class={["screen-card", "mode-#{s.mode}"]}
           >
-            {gettext("Join")}
-          </.button>
-        </.form>
-      </section>
+            <div class="screen-head">
+              <span class="screen-num">{s.number}</span>
+              <div class="screen-title">
+                <h3>{gettext("Screen %{number}", number: s.number)}</h3>
+                <p class="note">
+                  HDMI {s.number} · {mode_label(s.mode)}
+                </p>
+              </div>
+              <.link
+                href={~p"/hall?screen=#{s.name}"}
+                id={"screen-#{s.name}-open"}
+                class="btn btn-ghost"
+                target="_blank"
+              >
+                <.icon name="expand" />
+                <span>{gettext("Open")}</span>
+              </.link>
+            </div>
 
-      <section id="speech-panel" class="panel">
-        <header class="panel-head">
-          <h2>{gettext("How Nunki speaks")}</h2>
-          <.button :if={@advanced?} id="refresh-voices" variant="ghost" phx-click="refresh_voices">
-            {gettext("Look for voices again")}
-          </.button>
-        </header>
+            <div id={"screen-#{s.name}-preview"} class="screen-preview">
+              <%= cond do %>
+                <% s.mode == "black" -> %>
+                  <span class="preview-black">{gettext("Black")}</span>
+                <% s.countdown && !s.countdown.started? -> %>
+                  <span class="preview-label">
+                    {gettext("Round %{round} starts in", round: s.countdown.round)}
+                  </span>
+                  <span class="preview-clock">{Words.clock(s.countdown.remaining_ms)}</span>
+                <% s.countdown -> %>
+                  <span class="preview-label">
+                    {gettext("Round %{round} has started.", round: s.countdown.round)}
+                  </span>
+                <% s.round -> %>
+                  <span class="preview-label">{gettext("Pairings")}</span>
+                  <span class="preview-clock">{gettext("Round %{round}", round: s.round)}</span>
+                <% true -> %>
+                  <span class="preview-label">{gettext("Waiting for the pairings.")}</span>
+              <% end %>
+              <span :if={s.shown_name} class="preview-name">{s.shown_name}</span>
+              <span :if={s.mode == "paused"} class="preview-badge">{gettext("Paused")}</span>
+            </div>
 
-        <.form for={@speech_form} id="speech-form" class="speech" phx-change="speech">
-          <.input
-            field={@speech_form[:language]}
-            type="select"
-            label={gettext("Language of the announcements")}
-            options={[
-              {gettext("Follow the tournament"), "follow"},
-              {"English", "en"},
-              {"Nederlands", "nl"}
-            ]}
-          />
+            <div
+              class="segmented"
+              role="group"
+              aria-label={gettext("Screen %{number}", number: s.number)}
+            >
+              <button
+                :for={mode <- Nunki.Hall.modes()}
+                id={"screen-#{s.name}-#{mode}"}
+                type="button"
+                aria-pressed={to_string(s.mode == mode)}
+                class={["seg", "seg-#{mode}"]}
+                phx-click="screen_mode"
+                phx-value-screen={s.name}
+                phx-value-mode={mode}
+              >
+                <.icon name={mode_icon(mode)} />
+                <span>{mode_label(mode)}</span>
+              </button>
+            </div>
 
-          <.input
-            field={@speech_form[:read_on_publish]}
-            type="checkbox"
-            label={gettext("Read the pairings when they are published")}
-          />
-
-          <div :if={@advanced?} class="voice-row">
-            <.input
-              :if={@voices_en != []}
-              field={@speech_form[:voice_en]}
-              type="select"
-              label={gettext("English voice")}
-              options={Enum.map(@voices_en, &{&1.label, &1.id})}
-            />
-            <p :if={@voices_en == []} id="no-voice-en" class="note bad">
-              {gettext("No English voice on this machine.")} {voice_hint()}
-            </p>
-            <.button id="test-voice-en" icon="speaker" phx-click="test_voice" phx-value-lang="en">
-              {gettext("Test voice")}
-            </.button>
-          </div>
-
-          <div :if={@advanced?} class="voice-row">
-            <.input
-              :if={@voices_nl != []}
-              field={@speech_form[:voice_nl]}
-              type="select"
-              label={gettext("Dutch voice")}
-              options={Enum.map(@voices_nl, &{&1.label, &1.id})}
-            />
-            <p :if={@voices_nl == []} id="no-voice-nl" class="note bad">
-              {gettext("No Dutch voice on this machine.")} {voice_hint()}
-            </p>
-            <.button id="test-voice-nl" icon="speaker" phx-click="test_voice" phx-value-lang="nl">
-              {gettext("Test voice")}
-            </.button>
-          </div>
-
-          <p :if={@advanced? or is_nil(@engine)} class="note" id="engine">
-            <%= if @engine do %>
-              {gettext("Speech engine: %{engine}.", engine: @engine)}
-            <% else %>
-              <span class="bad">{gettext("No speech engine found on this machine.")}</span>
-            <% end %>
-          </p>
-        </.form>
-      </section>
-
-      <section :if={@advanced?} id="device-panel" class="panel">
-        <header class="panel-head">
-          <h2>{gettext("This device")}</h2>
-        </header>
-
-        <.form for={@device_form} id="device-form" class="inline-form" phx-submit="device">
-          <.input
-            field={@device_form[:name]}
-            label={gettext("Name")}
-            hint={
-              gettext(
-                "The name a tournament starts with when you join it. After that, each tournament has its own name above."
-              )
-            }
-          />
-          <.button id="device-save" type="submit">{gettext("Save")}</.button>
-        </.form>
-
-        <div class="updates" id="updates">
-          <p class="note">
-            {gettext("Nunki %{version}.", version: Updates.current_version())}
-          </p>
-          <label class="check" for="update-mode">
-            <input
-              id="update-mode"
-              type="checkbox"
-              checked={@update_mode == "ask"}
-              phx-click="update_mode"
-              phx-value-mode={if @update_mode == "ask", do: "never", else: "ask"}
-            />
-            <span>{gettext("Look for new versions (one small question to GitHub, every half hour)")}</span>
-          </label>
-          <label :if={Autostart.supported?()} class="check" for="autostart">
-            <input
-              id="autostart"
-              type="checkbox"
-              checked={@autostart?}
-              phx-click="autostart"
-              phx-value-on={to_string(!@autostart?)}
-            />
-            <span>{gettext("Start Nunki when Windows starts")}</span>
-          </label>
+            <form
+              id={"screen-#{s.name}-tournament-form"}
+              class="screen-pick"
+              phx-change="screen_tournament"
+            >
+              <input type="hidden" name="screen" value={s.name} />
+              <.input
+                id={"screen-#{s.name}-tournament"}
+                type="select"
+                name="id"
+                value={s.tournament || ""}
+                label={gettext("Shows")}
+                options={[{gettext("Automatic"), ""} | @tournament_options]}
+              />
+            </form>
+          </article>
         </div>
       </section>
 
-      <section :if={@local?} id="pin-panel" class="panel">
-        <header class="panel-head">
-          <h2>{gettext("Access PIN")}</h2>
-        </header>
+      <div class="control-cols">
+        <div class="col-main">
+          <section id="tournaments-panel" class="panel">
+            <header class="panel-head">
+              <h2>{gettext("Tournaments")}</h2>
+              <.link navigate={~p"/hall"} id="hall-link" class="btn btn-ghost">
+                <.icon name="screen" />
+                <span>{gettext("Open the hall screen")}</span>
+              </.link>
+            </header>
 
-        <p class="note">
-          {gettext(
-            "Every other computer that opens Nunki, the hall screen too, has to give this PIN (only when Nunki listens on the hall's network). This computer is never asked."
-          )}
-        </p>
+            <ul id="tournaments" class="tournaments" phx-update="stream">
+              <li id="tournaments-empty" class="empty">
+                {gettext(
+                  "No tournament yet. In OpenPairings: the tournament's Settings → Hall announcer → Add an announcer. Paste the link below."
+                )}
+              </li>
+              <li :for={{dom_id, t} <- @streams.tournaments} id={dom_id} class="tournament">
+                <div class="t-main">
+                  <span
+                    class={["dot", if(t.up?, do: "up", else: "down")]}
+                    title={if t.up?, do: gettext("Connected"), else: gettext("Not connected")}
+                  ></span>
+                  <div>
+                    <h3 class="t-name">{t.name}</h3>
+                    <p class="note">
+                      {t.server} · <span :if={t.up?}>{gettext("connected")}</span>
+                      <span :if={!t.up?} class="bad">{t.error || gettext("not connected")}</span>
+                    </p>
+                    <p class="note" id={"#{dom_id}-round"}>
+                      <%= if t.round do %>
+                        {gettext(
+                          "Last pairings received: round %{round} of %{rounds}, %{boards} boards.",
+                          round: t.round,
+                          rounds: t.rounds || "?",
+                          boards: t.boards
+                        )}
+                      <% else %>
+                        {gettext("No pairings received yet.")}
+                      <% end %>
+                    </p>
+                  </div>
+                </div>
 
-        <p>
-          <span class="note">{gettext("The PIN now:")}</span>
-          <strong id="access-pin-value" class="mono">{@access_pin}</strong>
-        </p>
+                <.form
+                  :if={@advanced?}
+                  for={t.settings_form}
+                  id={"#{dom_id}-settings"}
+                  class="inline-form t-settings"
+                  phx-change="announcer_draft"
+                  phx-submit="announcer_save"
+                >
+                  <.input field={t.settings_form[:tournament]} type="hidden" />
+                  <.input
+                    field={t.settings_form[:name]}
+                    label={gettext("Name")}
+                    maxlength="60"
+                    disabled={!t.up?}
+                  />
+                  <.input
+                    :if={t.room_options}
+                    field={t.settings_form[:room]}
+                    type="select"
+                    label={gettext("Room")}
+                    options={t.room_options}
+                    disabled={!t.up?}
+                  />
+                  <.input
+                    :if={!t.room_options}
+                    field={t.settings_form[:room]}
+                    label={gettext("Room")}
+                    maxlength="60"
+                    disabled={!t.up?}
+                  />
+                  <.button id={"#{dom_id}-settings-save"} type="submit" disabled={!t.up?}>
+                    {gettext("Save")}
+                  </.button>
+                  <p :if={!t.up?} id={"#{dom_id}-settings-down"} class="note">
+                    {gettext(
+                      "Name and room are changed while the line is up; OpenPairings keeps them."
+                    )}
+                  </p>
+                </.form>
 
-        <.form for={@pin_form} id="pin-form" class="inline-form" phx-submit="pin_save">
-          <.input
-            field={@pin_form[:pin]}
-            id="pin-input"
-            type="password"
-            label={gettext("A PIN of your own (6 to 64 characters)")}
-            autocomplete="off"
-            maxlength="64"
-            spellcheck="false"
-          />
-          <.button
-            id="pin-show"
-            type="button"
-            variant="ghost"
-            phx-click={JS.toggle_attribute({"type", "password", "text"}, to: "#pin-input")}
-          >
-            {gettext("Show")}
-          </.button>
-          <.button id="pin-save" type="submit">{gettext("Save")}</.button>
-          <.button id="pin-new" type="button" phx-click="pin_new">
-            {gettext("New random PIN")}
-          </.button>
-        </.form>
-        <p :if={@pin_error} id="pin-error" class="bad" role="alert">{@pin_error}</p>
-      </section>
+                <div class="t-countdown">
+                  <%= if t.countdown do %>
+                    <p id={"#{dom_id}-countdown"} class="countdown-line">
+                      <.icon name="timer" />
+                      <%= if t.countdown.started? do %>
+                        {gettext("Round %{round} has started.", round: t.countdown.round)}
+                      <% else %>
+                        {gettext("Round %{round} starts in %{time}.",
+                          round: t.countdown.round,
+                          time: Words.clock(t.countdown.remaining_ms)
+                        )}
+                      <% end %>
+                    </p>
+                    <.button
+                      id={"#{dom_id}-cancel"}
+                      variant="ghost"
+                      phx-click="countdown_cancel"
+                      phx-value-id={t.id}
+                    >
+                      {gettext("Cancel the countdown")}
+                    </.button>
+                  <% else %>
+                    <form
+                      id={"#{dom_id}-countdown-form"}
+                      class="inline-form"
+                      phx-submit="countdown_start"
+                    >
+                      <input type="hidden" name="tournament" value={t.id} />
+                      <.input
+                        id={"#{dom_id}-minutes"}
+                        type="select"
+                        name="minutes"
+                        value="5"
+                        label={gettext("Countdown")}
+                        options={minute_options()}
+                      />
+                      <.button
+                        id={"#{dom_id}-countdown-start"}
+                        type="submit"
+                        icon="timer"
+                        disabled={is_nil(t.round)}
+                      >
+                        {gettext("Start")}
+                      </.button>
+                    </form>
+                  <% end %>
+                </div>
 
-      <section id="advanced-panel" class="panel">
-        <label class="check" for="advanced-toggle">
-          <input
-            id="advanced-toggle"
-            type="checkbox"
-            checked={@advanced?}
-            phx-click="advanced"
-            phx-value-on={to_string(!@advanced?)}
-          />
-          <span>{gettext("Show advanced features")}</span>
-        </label>
-        <p class="note">
-          {gettext(
-            "Choosing voices, testing them, name and room per tournament, this device's name and the update options. Off keeps this page small; none of it stops working."
-          )}
-        </p>
-      </section>
+                <div class="t-announce" id={"#{dom_id}-announce"}>
+                  <p :if={t.announcement} id={"#{dom_id}-last-announcement"} class="note">
+                    {gettext("Last announcement: %{text}", text: t.announcement)}
+                  </p>
+                  <div class="t-actions">
+                    <.button
+                      :for={key <- Nunki.Script.canned_keys()}
+                      id={"#{dom_id}-canned-#{key}"}
+                      variant="ghost"
+                      phx-click="announce_canned"
+                      phx-value-tournament={t.id}
+                      phx-value-canned={key}
+                    >
+                      {canned_label(key)}
+                    </.button>
+                  </div>
+                  <form
+                    id={"#{dom_id}-announce-form"}
+                    class="inline-form"
+                    phx-submit="announce_text"
+                  >
+                    <input type="hidden" name="announce[tournament]" value={t.id} />
+                    <.input
+                      id={"#{dom_id}-announce-text"}
+                      type="text"
+                      name="announce[text]"
+                      value=""
+                      label={gettext("Announce")}
+                      maxlength="300"
+                    />
+                    <.button id={"#{dom_id}-announce-send"} type="submit" icon="play">
+                      {gettext("Say it")}
+                    </.button>
+                  </form>
+                </div>
+
+                <div class="t-actions">
+                  <.button
+                    id={"#{dom_id}-read"}
+                    icon="play"
+                    phx-click="read"
+                    phx-value-id={t.id}
+                    disabled={is_nil(t.round)}
+                  >
+                    {gettext("Read now")}
+                  </.button>
+                  <.link navigate={~p"/hall?t=#{t.id}"} id={"#{dom_id}-hall"} class="btn btn-ghost">
+                    <.icon name="screen" />
+                    <span>{gettext("Hall screen")}</span>
+                  </.link>
+                  <.button
+                    id={"#{dom_id}-remove"}
+                    icon="trash"
+                    variant="ghost"
+                    phx-click="remove"
+                    phx-value-id={t.id}
+                    data-confirm={
+                      if t.up?,
+                        do:
+                          gettext(
+                            "Remove this tournament from Nunki? OpenPairings is told, and nothing more is announced for it here."
+                          ),
+                        else:
+                          gettext(
+                            "Remove this tournament from Nunki? The line is down, so OpenPairings is NOT told: remove this device there too. Nothing more is announced for it here."
+                          )
+                    }
+                  >
+                    {gettext("Remove")}
+                  </.button>
+                </div>
+              </li>
+            </ul>
+
+            <.form
+              for={@join_form}
+              id="join-form"
+              class="join"
+              phx-change="join_change"
+              phx-submit="join"
+            >
+              <.input
+                field={@join_form[:link]}
+                type="url"
+                label={gettext("Join a tournament")}
+                placeholder="https://.../p/nunki/join/..."
+                autocomplete="off"
+                spellcheck="false"
+                hint={
+                  gettext(
+                    "The link from OpenPairings: the tournament's Settings → Hall announcer → Add an announcer. Good once, for fifteen minutes."
+                  )
+                }
+              />
+              <p :if={@join_error} id="join-error" class="bad" role="alert">{@join_error}</p>
+              <.button
+                id="join-button"
+                type="submit"
+                variant="primary"
+                icon="link"
+                phx-disable-with={gettext("Joining...")}
+              >
+                {gettext("Join")}
+              </.button>
+            </.form>
+          </section>
+        </div>
+
+        <div class="col-side">
+          <section id="speech-panel" class="panel">
+            <header class="panel-head">
+              <h2>{gettext("How Nunki speaks")}</h2>
+              <.button :if={@advanced?} id="refresh-voices" variant="ghost" phx-click="refresh_voices">
+                {gettext("Look for voices again")}
+              </.button>
+            </header>
+
+            <.form for={@speech_form} id="speech-form" class="speech" phx-change="speech">
+              <.input
+                field={@speech_form[:language]}
+                type="select"
+                label={gettext("Language of the announcements")}
+                options={[
+                  {gettext("Follow the tournament"), "follow"},
+                  {"English", "en"},
+                  {"Nederlands", "nl"}
+                ]}
+              />
+
+              <.input
+                field={@speech_form[:read_on_publish]}
+                type="checkbox"
+                label={gettext("Read the pairings when they are published")}
+              />
+
+              <div :if={@advanced?} class="voice-row">
+                <.input
+                  :if={@voices_en != []}
+                  field={@speech_form[:voice_en]}
+                  type="select"
+                  label={gettext("English voice")}
+                  options={Enum.map(@voices_en, &{&1.label, &1.id})}
+                />
+                <p :if={@voices_en == []} id="no-voice-en" class="note bad">
+                  {gettext("No English voice on this machine.")} {voice_hint()}
+                </p>
+                <.button id="test-voice-en" icon="speaker" phx-click="test_voice" phx-value-lang="en">
+                  {gettext("Test voice")}
+                </.button>
+              </div>
+
+              <div :if={@advanced?} class="voice-row">
+                <.input
+                  :if={@voices_nl != []}
+                  field={@speech_form[:voice_nl]}
+                  type="select"
+                  label={gettext("Dutch voice")}
+                  options={Enum.map(@voices_nl, &{&1.label, &1.id})}
+                />
+                <p :if={@voices_nl == []} id="no-voice-nl" class="note bad">
+                  {gettext("No Dutch voice on this machine.")} {voice_hint()}
+                </p>
+                <.button id="test-voice-nl" icon="speaker" phx-click="test_voice" phx-value-lang="nl">
+                  {gettext("Test voice")}
+                </.button>
+              </div>
+
+              <p :if={@advanced? or is_nil(@engine)} class="note" id="engine">
+                <%= if @engine do %>
+                  {gettext("Speech engine: %{engine}.", engine: @engine)}
+                <% else %>
+                  <span class="bad">{gettext("No speech engine found on this machine.")}</span>
+                <% end %>
+              </p>
+            </.form>
+          </section>
+
+          <section :if={@advanced?} id="device-panel" class="panel">
+            <header class="panel-head">
+              <h2>{gettext("This device")}</h2>
+            </header>
+
+            <.form for={@device_form} id="device-form" class="inline-form" phx-submit="device">
+              <.input
+                field={@device_form[:name]}
+                label={gettext("Name")}
+                hint={
+                  gettext(
+                    "The name a tournament starts with when you join it. After that, each tournament has its own name above."
+                  )
+                }
+              />
+              <.button id="device-save" type="submit">{gettext("Save")}</.button>
+            </.form>
+
+            <div class="updates" id="updates">
+              <p class="note">
+                {gettext("Nunki %{version}.", version: Updates.current_version())}
+              </p>
+              <label class="check" for="update-mode">
+                <input
+                  id="update-mode"
+                  type="checkbox"
+                  checked={@update_mode == "ask"}
+                  phx-click="update_mode"
+                  phx-value-mode={if @update_mode == "ask", do: "never", else: "ask"}
+                />
+                <span>{gettext(
+                  "Look for new versions (one small question to GitHub, every half hour)"
+                )}</span>
+              </label>
+              <label :if={Autostart.supported?()} class="check" for="autostart">
+                <input
+                  id="autostart"
+                  type="checkbox"
+                  checked={@autostart?}
+                  phx-click="autostart"
+                  phx-value-on={to_string(!@autostart?)}
+                />
+                <span>{gettext("Start Nunki when Windows starts")}</span>
+              </label>
+            </div>
+          </section>
+
+          <section :if={@local?} id="pin-panel" class="panel">
+            <header class="panel-head">
+              <h2>{gettext("Access PIN")}</h2>
+            </header>
+
+            <p class="note">
+              {gettext(
+                "Every other computer that opens Nunki, the hall screen too, has to give this PIN (only when Nunki listens on the hall's network). This computer is never asked."
+              )}
+            </p>
+
+            <p>
+              <span class="note">{gettext("The PIN now:")}</span>
+              <strong id="access-pin-value" class="mono">{@access_pin}</strong>
+            </p>
+
+            <.form for={@pin_form} id="pin-form" class="inline-form" phx-submit="pin_save">
+              <.input
+                field={@pin_form[:pin]}
+                id="pin-input"
+                type="password"
+                label={gettext("A PIN of your own (6 to 64 characters)")}
+                autocomplete="off"
+                maxlength="64"
+                spellcheck="false"
+              />
+              <.button
+                id="pin-show"
+                type="button"
+                variant="ghost"
+                phx-click={JS.toggle_attribute({"type", "password", "text"}, to: "#pin-input")}
+              >
+                {gettext("Show")}
+              </.button>
+              <.button id="pin-save" type="submit">{gettext("Save")}</.button>
+              <.button id="pin-new" type="button" phx-click="pin_new">
+                {gettext("New random PIN")}
+              </.button>
+            </.form>
+            <p :if={@pin_error} id="pin-error" class="bad" role="alert">{@pin_error}</p>
+          </section>
+
+          <section id="advanced-panel" class="panel">
+            <label class="check" for="advanced-toggle">
+              <input
+                id="advanced-toggle"
+                type="checkbox"
+                checked={@advanced?}
+                phx-click="advanced"
+                phx-value-on={to_string(!@advanced?)}
+              />
+              <span>{gettext("Show advanced features")}</span>
+            </label>
+            <p class="note">
+              {gettext(
+                "Choosing voices, testing them, name and room per tournament, this device's name and the update options. Off keeps this page small; none of it stops working."
+              )}
+            </p>
+          </section>
+        </div>
+      </div>
     </Layouts.app>
     """
   end
+
+  defp mode_label("live"), do: gettext("Live")
+  defp mode_label("paused"), do: gettext("Paused")
+  defp mode_label("black"), do: gettext("Black")
+
+  defp mode_icon("live"), do: "play"
+  defp mode_icon("paused"), do: "pause"
+  defp mode_icon("black"), do: "blank"
 
   defp pin_changed,
     do: gettext("PIN changed; every other browser has to give the new one.")
