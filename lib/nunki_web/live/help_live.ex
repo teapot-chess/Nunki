@@ -49,7 +49,7 @@ defmodule NunkiWeb.HelpLive do
             </li>
 
             <li>
-              Kopieer de link en plak hem op deze pagina in "Bij een toernooi aansluiten". Druk op Aansluiten. Staat OpenPairings op een ander toestel? Scan de QR-code met Manubrium op je telefoon: die herkent de link als een link voor Nunki en laat je hem kopiëren of delen naar deze pc.
+              Kopieer de link en plak hem op deze pagina in "Bij een toernooi aansluiten". Druk op Aansluiten. Staat OpenPairings op een ander toestel? Scan de QR-code met Manubrium op je telefoon: die herkent de link als een link voor Nunki en laat je hem kopiëren of delen naar deze pc. Een link die met http:// begint, wordt alleen aanvaard voor een server op het eigen netwerk; daarbuiten zou de sleutel van dit toestel onversleuteld reizen, dus gebruik dan de https://-link.
             </li>
 
             <li>Het toernooi staat in de lijst. Een groene stip: de verbinding staat.</li>
@@ -262,7 +262,7 @@ defmodule NunkiWeb.HelpLive do
             </li>
 
             <li>
-              Copy the link and paste it into "Join a tournament" on this page. Press Join. OpenPairings open on another device? Scan the QR code with Manubrium on your phone: it recognises the link as one for Nunki and lets you copy or share it to this PC.
+              Copy the link and paste it into "Join a tournament" on this page. Press Join. OpenPairings open on another device? Scan the QR code with Manubrium on your phone: it recognises the link as one for Nunki and lets you copy or share it to this PC. A link that starts with http:// is only accepted for a server on the hall's own network; anywhere else this device's key would travel unencrypted, so use the https:// link.
             </li>
 
             <li>The tournament is in the list. A green dot: the line is up.</li>

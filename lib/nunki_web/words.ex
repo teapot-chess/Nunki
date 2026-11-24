@@ -37,6 +37,12 @@ defmodule NunkiWeb.Words do
         product: String.capitalize(to_string(product))
       )
 
+  def join_error(:plain_http),
+    do:
+      gettext(
+        "That link starts with http:// and points outside this network, so this device's key would travel unencrypted. Use the https:// link."
+      )
+
   def join_error(:used_or_expired),
     do: gettext("That link has been used or has expired. Make a new one in OpenPairings.")
 

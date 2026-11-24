@@ -78,4 +78,30 @@ defmodule Nunki.JoinTest do
     assert Tournaments.join(FakeServer.link(server)) == {:error, :unreachable}
     assert Store.tournaments() == []
   end
+
+  test "plain http only inside this network: elsewhere the key would travel in clear" do
+    for link <- [
+          "http://pairings.example/p/nunki/join/K7Q",
+          "http://8.8.8.8/p/nunki/join/K7Q",
+          "http://172.32.0.1/p/nunki/join/K7Q",
+          "http://pairings.local.evil.example/p/nunki/join/K7Q"
+        ] do
+      assert Join.parse(link) == {:error, :plain_http}, link
+    end
+
+    for link <- [
+          "https://pairings.example/p/nunki/join/K7Q",
+          "http://localhost:4000/p/nunki/join/K7Q",
+          "http://127.0.0.1:4000/p/nunki/join/K7Q",
+          "http://192.168.1.20/p/nunki/join/K7Q",
+          "http://10.0.0.5/p/nunki/join/K7Q",
+          "http://100.101.102.103/p/nunki/join/K7Q",
+          "http://[fd7a:115c:a1e0::1]/p/nunki/join/K7Q",
+          "http://club-pc.local/p/nunki/join/K7Q"
+        ] do
+      assert {:ok, _} = Join.parse(link), link
+    end
+
+    assert NunkiWeb.Words.join_error(:plain_http) =~ "https://"
+  end
 end

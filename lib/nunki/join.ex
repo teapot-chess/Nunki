@@ -31,7 +31,7 @@ defmodule Nunki.Join do
   @doc """
   `{:ok, %{"server", "socket", "key", "tournament"}}` - what
   `Nunki.Store.add_tournament/1` takes - or `{:error, reason}` with
-  `reason` one of `:not_a_link`, `{:other_product, name}`,
+  `reason` one of `:not_a_link`, `:plain_http`, `{:other_product, name}`,
   `:used_or_expired`, `:version`, `:not_a_server`, `:unreachable`.
   """
   def redeem(link, identity, req_options \\ []) do
@@ -82,7 +82,8 @@ defmodule Nunki.Join do
   @doc """
   The join link's parts: `{:ok, uri}`, `{:error, {:other_product, name}}`
   for another hall app's link (a print station's `/p/polis/join/...`, or a
-  phone's `manubrium://connect?...`), or `{:error, :not_a_link}`. Nothing is
+  phone's `manubrium://connect?...`), `{:error, :plain_http}` for `http://` to a host outside this network,
+  or `{:error, :not_a_link}`. Nothing is
   sent for any of the errors, so a code is never spent on the wrong device.
   """
   def parse(link) when is_binary(link) do
@@ -111,9 +112,11 @@ defmodule Nunki.Join do
       when scheme in ["http", "https"] and is_binary(host) and host != "" and is_binary(path) ->
         with [before, rest] <- split_last(path),
              [product, "join", code] when code != "" <- String.split(rest, "/") do
-          if product == @product,
-            do: {:ok, uri, server(uri, before), code},
-            else: {:error, {:other_product, product}}
+          cond do
+            scheme == "http" and not private_host?(host) -> {:error, :plain_http}
+            product == @product -> {:ok, uri, server(uri, before), code}
+            true -> {:error, {:other_product, product}}
+          end
         else
           _other -> {:error, :not_a_link}
         end
@@ -122,6 +125,36 @@ defmodule Nunki.Join do
         {:error, :not_a_link}
     end
   end
+
+  @doc """
+  Whether a host may be spoken to over plain http: loopback, a private
+  address (RFC 1918, link-local, 100.64/10 as Tailscale uses it, fc00::/7,
+  fe80::/10) or a `.local` / `.localhost` name. Anywhere else the device key
+  would cross the open internet in clear, on the join and on every reconnect.
+  """
+  def private_host?(host) when is_binary(host) do
+    host =
+      host
+      |> String.trim("[")
+      |> String.trim("]")
+      |> String.trim_trailing(".")
+      |> String.downcase()
+
+    case :inet.parse_address(String.to_charlist(host)) do
+      {:ok, {127, _, _, _}} -> true
+      {:ok, {10, _, _, _}} -> true
+      {:ok, {172, b, _, _}} when b in 16..31 -> true
+      {:ok, {192, 168, _, _}} -> true
+      {:ok, {169, 254, _, _}} -> true
+      {:ok, {100, b, _, _}} when b in 64..127 -> true
+      {:ok, {0, 0, 0, 0, 0, 0, 0, 1}} -> true
+      {:ok, {a, _, _, _, _, _, _, _}} when a in 0xFC00..0xFDFF or a in 0xFE80..0xFEBF -> true
+      {:ok, _public} -> false
+      {:error, _name} -> host == "localhost" or String.ends_with?(host, [".local", ".localhost"])
+    end
+  end
+
+  def private_host?(_host), do: false
 
   defp server(uri, ""),
     do: URI.to_string(%URI{scheme: uri.scheme, host: uri.host, port: uri.port})
