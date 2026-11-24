@@ -393,7 +393,8 @@ p { margin: 0.25rem 0; }
 .screen-pick .field select { min-height: 44px; }
 
 .segmented-two { grid-template-columns: repeat(2, 1fr); }
-.seg-hall[aria-pressed="true"], .seg-web[aria-pressed="true"] { background: var(--accent); }
+.segmented-three { grid-template-columns: repeat(3, 1fr); }
+.seg-hall[aria-pressed="true"], .seg-web[aria-pressed="true"], .seg-boards[aria-pressed="true"] { background: var(--accent); }
 .screen-web { display: grid; gap: 8px; }
 .screen-web-row { display: flex; gap: 8px; align-items: flex-end; }
 .screen-web-row .field { flex: 1; margin: 0; }
@@ -412,6 +413,11 @@ p { margin: 0.25rem 0; }
   font-size: clamp(1rem, 2vw, 1.6rem); z-index: 2;
 }
 .hall-web-wait[hidden] { display: none; }
+.hall-boards-missing {
+  position: fixed; inset: 0; background: #0f0f0e; cursor: none; padding: 6vw;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+.hall-boards-missing p { font-size: clamp(2rem, 5vw, 5rem); line-height: 1.2; color: #a7a298; margin: 0; max-width: 20em; }
 .hall.is-paused { cursor: none; }
 
 /* "Which monitor is this?" - the screen's number, as large as the screen. */

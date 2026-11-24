@@ -33,13 +33,21 @@ defmodule OpenPairingsNunkiWeb.LinkSocket do
   alias OpenPairingsNunki.{Hall, Protocol, RoundPayload}
   alias PairingsEngine.Tournaments
   alias PairingsEngine.Tournaments.Tournament
+  alias PairingsEngineWeb.PublicLink
 
   @hello_ms 10_000
   @debounce_ms 300
 
   @doc false
   def new_state,
-    do: %{announcer: nil, last_round: 0, last_rev: nil, recheck: nil, last_settings: nil}
+    do: %{
+      announcer: nil,
+      last_round: 0,
+      last_rev: nil,
+      last_results: :unsent,
+      recheck: nil,
+      last_settings: nil
+    }
 
   @impl true
   def init(_args) do
@@ -139,7 +147,7 @@ defmodule OpenPairingsNunkiWeb.LinkSocket do
     {settings_frames, state} = settings_frames(state)
 
     frames =
-      [Protocol.welcome(Hall.server_name(), tournament) | settings_frames] ++
+      [Protocol.welcome(Hall.server_name(), tournament, results(tournament)) | settings_frames] ++
         round_frames ++ countdown_frames
 
     {:push, Enum.map(frames, &text/1), state}
@@ -242,10 +250,14 @@ defmodule OpenPairingsNunkiWeb.LinkSocket do
   defp round_frames(state) do
     row = Hall.get_announcer(state.announcer.id) || state.announcer
 
-    payload =
+    {payload, results} =
       case Tournaments.get_tournament(row.tournament_id) do
-        nil -> nil
-        t -> t |> RoundPayload.latest() |> RoundPayload.for_room(Hall.effective_room(t, row))
+        nil ->
+          {nil, nil}
+
+        t ->
+          {t |> RoundPayload.latest() |> RoundPayload.for_room(Hall.effective_room(t, row)),
+           results(t)}
       end
 
     case payload do
@@ -255,12 +267,25 @@ defmodule OpenPairingsNunkiWeb.LinkSocket do
       %{"round" => n} when n < state.last_round ->
         {[], state}
 
-      %{"round" => n, "rev" => rev} when n == state.last_round and rev == state.last_rev ->
-        {[], state}
+      # The same round again, only because the results address changed (it
+      # went public, or stopped): the device keeps the round it has and takes
+      # the address. It does not read a round it already announced.
+      %{"round" => n, "rev" => rev} = payload
+      when n == state.last_round and rev == state.last_rev ->
+        if results == state.last_results,
+          do: {[], state},
+          else: {[Protocol.round(payload, results)], %{state | last_results: results}}
 
       %{"round" => n, "rev" => rev} = payload ->
-        {[Protocol.round(payload)], %{state | last_round: n, last_rev: rev}}
+        {[Protocol.round(payload, results)],
+         %{state | last_round: n, last_rev: rev, last_results: results}}
     end
+  end
+
+  # The tournament's public front page on the results site, or nil when it has
+  # none (not switched on, or no results site known to this server).
+  defp results(%Tournament{} = tournament) do
+    if PublicLink.public?(tournament), do: PublicLink.url(tournament), else: nil
   end
 
   defp refuse(reason, state) do

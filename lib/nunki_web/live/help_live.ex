@@ -125,6 +125,12 @@ defmodule NunkiWeb.HelpLive do
           </p>
 
           <p>
+            Een derde keuze is <strong>Live borden</strong>: het scherm toont dan de live borden van het toernooi dat het toont, rechtstreeks van OpenResults, en volgt zelf de lopende ronde. Typ bij "Borden" welke borden je wilt, bijvoorbeeld <span class="mono">1-4</span>, <span class="mono">5-10</span>,
+            <span class="mono">1,3,7</span>
+            of <span class="mono">1-3,7</span>, en druk op Tonen; leeg is alle borden. Zo toont Scherm 1 de borden 1-4 en Scherm 2 de borden 5-10. Het adres van OpenResults krijgt Nunki van OpenPairings, zodra het toernooi daar gepubliceerd is; zolang dat niet zo is, staat er in grote letters dat het toernooi niet gepubliceerd is, en het scherm schakelt zelf over zodra het wel zo is. Het scherm volgt ook het toernooi dat het toont. De borden die je koos blijven bewaard als je naar de uitzending terugschakelt.
+          </p>
+
+          <p>
             Met de schakelaar "Geluid aan" zet je Nunki stil: er wordt dan niets gezegd, en ook niets bewaard voor later. De schermen tonen nog alles.
           </p>
         </section>
@@ -335,6 +341,12 @@ defmodule NunkiWeb.HelpLive do
             <span class="mono">https://</span>
             addresses are accepted, and <span class="mono">http://</span>
             for this computer and the hall's own network (localhost, 10.x, 172.16-31.x, 192.168.x, *.local). "Hall broadcast" goes back to the broadcast; the address is kept for next time. Black still blacks the screen out; Paused cannot freeze somebody else's page. The page has to allow being framed; OpenResults does.
+          </p>
+
+          <p>
+            A third choice is <strong>Live boards</strong>: the screen then shows the live boards of the tournament it shows, straight from OpenResults, and follows the current round by itself. Type under "Boards" which boards you want, for instance <span class="mono">1-4</span>, <span class="mono">5-10</span>,
+            <span class="mono">1,3,7</span>
+            or <span class="mono">1-3,7</span>, and press Show; empty means all boards. That way Screen 1 can show boards 1-4 and Screen 2 boards 5-10. Nunki gets the OpenResults address from OpenPairings once the tournament is published there; until then the screen says in large letters that the tournament is not published, and switches over by itself as soon as it is. The screen also follows the tournament it shows. The boards you chose are kept when you go back to the broadcast.
           </p>
 
           <p>

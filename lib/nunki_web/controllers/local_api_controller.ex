@@ -33,12 +33,16 @@ defmodule NunkiWeb.LocalApiController do
     with {:ok, body} <- body(conn),
          {:ok, screen} <- screen_param(body),
          {:ok, source} <-
-           fetch(body, "source", &is_binary/1, "source must be hall or web"),
+           fetch(body, "source", &is_binary/1, "source must be hall, web or boards"),
          {:ok, url} <-
            fetch(body, "url", &(is_nil(&1) or is_binary(&1)), "url must be an address or null",
              optional: true
            ),
-         :ok <- Hall.put_source(screen, source, url) |> source_words() do
+         {:ok, boards} <-
+           fetch(body, "boards", &is_binary/1, "boards must be text such as 1-4 or 1-3,7",
+             optional: true
+           ),
+         :ok <- Hall.put_source(screen, source, url, boards) |> source_words() do
       json(conn, state())
     else
       error -> refuse(conn, error)
@@ -94,6 +98,8 @@ defmodule NunkiWeb.LocalApiController do
            "tournament" => s["tournament"],
            "source" => s["source"],
            "url" => s["url"],
+           "boards" => s["boards"],
+           "boards_url" => Hall.boards_url(shown && shown["results"], s["boards"]),
            "shows" => shown && shown["id"],
            "countdown" => shown && countdown(shown["id"])
          }}
@@ -111,7 +117,8 @@ defmodule NunkiWeb.LocalApiController do
           %{
             "id" => t["id"],
             "name" => get_in(t, ["tournament", "name"]) || "",
-            "connected" => t["up?"] == true
+            "connected" => t["up?"] == true,
+            "results" => t["results"]
           }
         end,
       "countdown" => hdmi1["countdown"],
@@ -183,7 +190,13 @@ defmodule NunkiWeb.LocalApiController do
   end
 
   defp source_words(:ok), do: :ok
-  defp source_words({:error, :source}), do: {:error, 422, "source must be hall or web"}
+  defp source_words({:error, :source}), do: {:error, 422, "source must be hall, web or boards"}
+
+  defp source_words({:error, :boards}),
+    do:
+      {:error, 422,
+       "boards must be empty (all boards) or boards like 1-4, 5-10, 1,3,7 or 1-3,7 " <>
+         "(numbers 1 to 999, at most 20 items, at most 100 characters)"}
 
   defp source_words({:error, :no_url}),
     do: {:error, 422, "a web page needs an address (url)"}

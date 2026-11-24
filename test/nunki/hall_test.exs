@@ -18,7 +18,14 @@ defmodule Nunki.HallTest do
   end
 
   test "both screens start live and automatic" do
-    fresh = %{"mode" => "live", "tournament" => nil, "source" => "hall", "url" => nil}
+    fresh = %{
+      "mode" => "live",
+      "tournament" => nil,
+      "source" => "hall",
+      "url" => nil,
+      "boards" => ""
+    }
+
     assert Hall.all() == %{"hdmi1" => fresh, "hdmi2" => fresh}
   end
 
@@ -102,6 +109,42 @@ defmodule Nunki.HallTest do
 
       assert Hall.screen("hdmi1")["source"] == "hall"
       assert Hall.screen("hdmi1")["url"] == nil
+    end
+  end
+
+  describe "the live boards source" do
+    test "the selection is kept per screen and survives a restart" do
+      assert :ok = Hall.put_source("hdmi2", "boards", nil, " 1-4 , 7 ")
+      Store.reload()
+      assert Hall.screen("hdmi2")["source"] == "boards"
+      assert Hall.screen("hdmi2")["boards"] == "1-4,7"
+      assert Hall.screen("hdmi1")["boards"] == ""
+
+      assert :ok = Hall.put_source("hdmi2", "hall")
+      assert Hall.screen("hdmi2")["boards"] == "1-4,7"
+      assert :ok = Hall.put_source("hdmi2", "boards")
+      assert Hall.screen("hdmi2")["boards"] == "1-4,7"
+    end
+
+    test "check_boards: the grammar" do
+      assert {:ok, ""} = Hall.check_boards("")
+      assert {:ok, ""} = Hall.check_boards("   ")
+      assert {:ok, "1-3,7"} = Hall.check_boards("1 - 3, 7")
+      assert {:ok, "5-5"} = Hall.check_boards("5-5")
+
+      for bad <- ["0", "3-2", "1000", "x", ",", "1,", "1--2", nil, 3] do
+        assert {:error, :boards} = Hall.check_boards(bad)
+      end
+    end
+
+    test "boards_url: the current round, kiosk, cut to the selection" do
+      assert Hall.boards_url("https://o.cloud/t/x", "") ==
+               "https://o.cloud/t/x/live/current/projector?kiosk=1"
+
+      assert Hall.boards_url("https://o.cloud/t/x/", "1-4") ==
+               "https://o.cloud/t/x/live/current/projector?kiosk=1&boards=1-4"
+
+      assert Hall.boards_url(nil, "1-4") == nil
     end
   end
 

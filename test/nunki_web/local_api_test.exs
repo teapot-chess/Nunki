@@ -50,6 +50,8 @@ defmodule NunkiWeb.LocalApiTest do
                  "tournament" => nil,
                  "source" => "hall",
                  "url" => nil,
+                 "boards" => "",
+                 "boards_url" => nil,
                  "shows" => nil,
                  "countdown" => nil
                },
@@ -58,6 +60,8 @@ defmodule NunkiWeb.LocalApiTest do
                  "tournament" => nil,
                  "source" => "hall",
                  "url" => nil,
+                 "boards" => "",
+                 "boards_url" => nil,
                  "shows" => nil,
                  "countdown" => nil
                }
@@ -184,6 +188,79 @@ defmodule NunkiWeb.LocalApiTest do
 
     lan = api(:post, "/screen_source", %{"source" => "web", "url" => "http://192.168.1.9:4000/x"})
     assert json_response(lan, 200)["screens"]["hdmi1"]["url"] == "http://192.168.1.9:4000/x"
+  end
+
+  describe "the live boards source" do
+    @results "https://openresults.cloud/t/open-a"
+    @kiosk @results <> "/live/current/projector?kiosk=1"
+
+    defp boards(body) do
+      api(:post, "/screen_source", Map.merge(%{"screen" => "hdmi2", "source" => "boards"}, body))
+    end
+
+    test "is accepted, keeps its selection, and frames the tournament's OpenResults page" do
+      Nunki.subscribe()
+      id = tournament("Open A")
+      Store.update_tournament(id, &Map.put(&1, "results", @results))
+
+      body = boards(%{"boards" => " 5 - 10, 12 "}) |> json_response(200)
+      screen = body["screens"]["hdmi2"]
+      assert screen["source"] == "boards"
+      assert screen["boards"] == "5-10,12"
+      assert screen["boards_url"] == @kiosk <> "&boards=5-10,12"
+      assert [%{"results" => @results}] = body["tournaments"]
+      assert_receive {:hall_screen, "hdmi2", %{"source" => "boards", "boards" => "5-10,12"}}
+
+      # No selection given: the earlier one stays. An empty one is all boards.
+      assert boards(%{}) |> json_response(200) |> get_in(["screens", "hdmi2", "boards"]) ==
+               "5-10,12"
+
+      assert boards(%{"boards" => ""})
+             |> json_response(200)
+             |> get_in(["screens", "hdmi2"])
+             |> Map.take(["boards", "boards_url"]) ==
+               %{"boards" => "", "boards_url" => @kiosk}
+
+      # Kept while the source is something else, and kept in the file.
+      boards(%{"boards" => "1,3,7"})
+
+      body =
+        api(:post, "/screen_source", %{"screen" => "hdmi2", "source" => "hall"})
+        |> json_response(200)
+
+      assert body["screens"]["hdmi2"]["boards"] == "1,3,7"
+      assert Hall.screen("hdmi2")["boards"] == "1,3,7"
+    end
+
+    test "has no address while the tournament has no results, or nothing is joined" do
+      body = boards(%{}) |> json_response(200)
+      assert body["screens"]["hdmi2"]["source"] == "boards"
+      assert body["screens"]["hdmi2"]["boards_url"] == nil
+
+      tournament("Open A")
+      body = api(:get, "/state") |> json_response(200)
+      assert body["screens"]["hdmi2"]["boards_url"] == nil
+      assert [%{"results" => nil}] = body["tournaments"]
+    end
+
+    test "refusals say why, and change nothing" do
+      bad =
+        ["0", "4-2", "1000", "a", "1,,2", "1-", "-3", "1-2-3"] ++
+          [String.duplicate("1,", 20) <> "2", String.duplicate("1", 101)]
+
+      for boards <- bad do
+        assert json_response(boards(%{"boards" => boards}), 422)["error"] =~ "boards must be"
+      end
+
+      assert boards(%{"boards" => 4}) |> json_response(422)
+      assert Hall.screen("hdmi2")["source"] == "hall"
+
+      good = ["", "1", "1-4", "1,3,7", "1-3,7", "999", String.duplicate("1,", 19) <> "2"]
+
+      for boards <- good do
+        assert boards(%{"boards" => boards}) |> json_response(200)
+      end
+    end
   end
 
   test "POST /screen_source: refusals say why" do

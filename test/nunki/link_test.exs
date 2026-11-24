@@ -33,6 +33,70 @@ defmodule Nunki.LinkTest do
     assert Tournaments.links_up() == 1
   end
 
+  describe "the results address" do
+    defp welcome_with(server, tournament_fields) do
+      FakeServer.push(server, %{
+        "type" => "welcome",
+        "v" => 1,
+        "server" => "fake",
+        "tournament" => Map.merge(%{"id" => 1, "name" => "Fake Open"}, tournament_fields)
+      })
+    end
+
+    test "welcome sets it, null clears it, an absent key changes nothing" do
+      {server, id} = joined()
+      assert Store.tournament(id)["results"] == nil
+
+      welcome_with(server, %{"results" => "https://openresults.cloud/t/open/"})
+      eventually(fn -> Store.tournament(id)["results"] end)
+      assert Store.tournament(id)["results"] == "https://openresults.cloud/t/open"
+
+      welcome_with(server, %{})
+      FakeServer.push(server, %{"type" => "round", "round" => payload(1)})
+      eventually(fn -> Store.tournament(id)["round"] end)
+      assert Store.tournament(id)["results"] == "https://openresults.cloud/t/open"
+
+      welcome_with(server, %{"results" => nil})
+      eventually(fn -> Store.tournament(id)["results"] == nil end)
+    end
+
+    test "a round frame carries it too; an unacceptable address changes nothing" do
+      {server, id} = joined()
+
+      FakeServer.push(server, %{
+        "type" => "round",
+        "round" => payload(1),
+        "results" => "https://openresults.cloud/t/open"
+      })
+
+      eventually(fn -> Store.tournament(id)["results"] end)
+
+      for bad <- [
+            "http://example.org/t/x",
+            "ftp://x",
+            "nonsense",
+            5,
+            "https://" <> String.duplicate("a", 2000)
+          ] do
+        FakeServer.push(server, %{"type" => "round", "round" => payload(1), "results" => bad})
+        _ = :sys.get_state(Store)
+      end
+
+      assert Store.tournament(id)["results"] == "https://openresults.cloud/t/open"
+
+      FakeServer.push(server, %{"type" => "round", "round" => payload(1), "results" => nil})
+      eventually(fn -> Store.tournament(id)["results"] == nil end)
+
+      FakeServer.push(server, %{
+        "type" => "round",
+        "round" => payload(1),
+        "results" => "http://192.168.1.5:4005/t/x"
+      })
+
+      eventually(fn -> Store.tournament(id)["results"] == "http://192.168.1.5:4005/t/x" end)
+    end
+  end
+
   describe "name and room (settings)" do
     test "what the server says is kept per tournament, and what it says next replaces it" do
       {server, id} =
