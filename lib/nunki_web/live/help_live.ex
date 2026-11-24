@@ -117,6 +117,14 @@ defmodule NunkiWeb.HelpLive do
           </p>
 
           <p>
+            Elk scherm kan ook een <strong>webpagina</strong>
+            tonen in plaats van de uitzending: kies "Webpagina" onder het scherm, typ het adres en druk op Tonen. Scherm 1 toont dan de indeling terwijl Scherm 2 de live borden van OpenResults toont (<span class="mono">https://openresults.cloud/t/&lt;slug&gt;/live/&lt;ronde&gt;/all</span>) of de projectorweergave (<span class="mono">https://openresults.cloud/t/&lt;slug&gt;/projector</span>). Het scherm volgt meteen; kan de pagina niet bereikt worden, dan staat dat erop en probeert het scherm zelf opnieuw. Alleen
+            <span class="mono">https://</span>
+            adressen worden aanvaard, en <span class="mono">http://</span>
+            voor deze computer en het eigen netwerk van de zaal (localhost, 10.x, 172.16-31.x, 192.168.x, *.local). "Zaaluitzending" gaat terug naar de uitzending; het adres wordt bewaard voor de volgende keer. Zwart maakt het scherm nog steeds zwart; Bevroren kan de pagina van iemand anders niet bevriezen. De pagina moet toestaan dat ze in een kader getoond wordt; OpenResults doet dat.
+          </p>
+
+          <p>
             Met de schakelaar "Geluid aan" zet je Nunki stil: er wordt dan niets gezegd, en ook niets bewaard voor later. De schermen tonen nog alles.
           </p>
         </section>
@@ -319,6 +327,14 @@ defmodule NunkiWeb.HelpLive do
             keeps what is on it now until you press Live again (Nunki goes on speaking),
             <strong>Black</strong>
             makes it entirely black, for a prize-giving say. "Shows" picks the tournament it shows; Automatic is the one counting down, else the first. "Identify the screens" puts a large 1 or 2 on each for a few seconds, so you know which monitor is which.
+          </p>
+
+          <p>
+            Each screen can also show a <strong>web page</strong>
+            instead of the broadcast: choose "Web page" under the screen, type the address and press Show. Screen 1 can then show the pairings while Screen 2 shows OpenResults' live boards (<span class="mono">https://openresults.cloud/t/&lt;slug&gt;/live/&lt;round&gt;/all</span>) or its projector view (<span class="mono">https://openresults.cloud/t/&lt;slug&gt;/projector</span>). The screen follows at once; if the page cannot be reached it says so and tries again by itself. Only
+            <span class="mono">https://</span>
+            addresses are accepted, and <span class="mono">http://</span>
+            for this computer and the hall's own network (localhost, 10.x, 172.16-31.x, 192.168.x, *.local). "Hall broadcast" goes back to the broadcast; the address is kept for next time. Black still blacks the screen out; Paused cannot freeze somebody else's page. The page has to allow being framed; OpenResults does.
           </p>
 
           <p>

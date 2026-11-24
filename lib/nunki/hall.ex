@@ -18,6 +18,14 @@ defmodule Nunki.Hall do
 
   `?t=<id>` on the page still beats both, for whoever opens a screen by hand.
 
+  Each screen also has a **source**: `"hall"` (Nunki's own broadcast, all of
+  the above) or `"web"` (an address, shown full screen in a frame inside the
+  hall page: OpenResults' live boards on one monitor, say, while the other
+  shows the pairings). The address is kept when the screen goes back to the
+  broadcast, so switching back and forth does not mean typing it again.
+  `black` still blacks a web page out; `paused` cannot freeze somebody
+  else's page and leaves it alone. Addresses are checked by `check_url/1`.
+
   ## Sound
 
   On or off. Off means nothing is said at all - not queued, not saved for
@@ -33,6 +41,7 @@ defmodule Nunki.Hall do
 
   @screens ~w(hdmi1 hdmi2)
   @modes ~w(live paused black)
+  @sources ~w(hall web)
   @identify_ms 5_000
 
   @doc "The screens there are."
@@ -45,7 +54,7 @@ defmodule Nunki.Hall do
   def screen_name(name) when name in @screens, do: name
   def screen_name(_other), do: "hdmi1"
 
-  @doc "`%{\"mode\", \"tournament\"}` of one screen."
+  @doc "`%{\"mode\", \"tournament\", \"source\", \"url\"}` of one screen."
   def screen(name) when name in @screens, do: Map.fetch!(all(), name)
 
   @doc "Every screen, by name."
@@ -58,13 +67,106 @@ defmodule Nunki.Hall do
   defp stored_screens(_other), do: %{}
 
   defp normalize(%{} = s) do
+    url =
+      case is_binary(s["url"]) && check_url(s["url"]) do
+        {:ok, url} -> url
+        _none -> nil
+      end
+
     %{
       "mode" => if(s["mode"] in @modes, do: s["mode"], else: "live"),
-      "tournament" => if(is_binary(s["tournament"]), do: s["tournament"])
+      "tournament" => if(is_binary(s["tournament"]), do: s["tournament"]),
+      "source" => if(s["source"] == "web" and url, do: "web", else: "hall"),
+      "url" => url
     }
   end
 
-  defp normalize(_none), do: %{"mode" => "live", "tournament" => nil}
+  defp normalize(_none),
+    do: %{"mode" => "live", "tournament" => nil, "source" => "hall", "url" => nil}
+
+  @doc "The sources a screen can have."
+  def sources, do: @sources
+
+  @doc """
+  Sets what a screen shows: `"hall"` (the broadcast) or `"web"` with an
+  address. `"web"` without an address uses the one the screen already has.
+  `:ok`, or `{:error, :screen | :source | :no_url | {:url, reason}}`, the
+  reason being one of `check_url/1`'s.
+  """
+  def put_source(name, source, url \\ nil) do
+    cond do
+      name not in @screens ->
+        {:error, :screen}
+
+      source not in @sources ->
+        {:error, :source}
+
+      source == "hall" ->
+        change(name, &Map.put(&1, "source", "hall"))
+
+      true ->
+        url = if is_binary(url) and String.trim(url) != "", do: url, else: screen(name)["url"]
+
+        case url && check_url(url) do
+          nil -> {:error, :no_url}
+          {:ok, ok} -> change(name, &Map.merge(&1, %{"source" => "web", "url" => ok}))
+          {:error, why} -> {:error, {:url, why}}
+        end
+    end
+  end
+
+  @max_url 2_000
+
+  @doc """
+  Whether an address may be shown on a screen: `{:ok, address}` (trimmed) or
+  `{:error, reason}`.
+
+  `https` to anywhere; `http` only to this machine or the hall's own
+  network - `localhost`, `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`,
+  `192.168.0.0/16`, `::1`, `*.local` - because an unencrypted page from the
+  internet is somebody on the way able to put anything on the hall's
+  screen. Reasons: `:empty`, `:too_long`, `:invalid`, `:credentials`,
+  `:scheme`, `:insecure`.
+  """
+  def check_url(url) when is_binary(url) do
+    url = String.trim(url)
+
+    with :ok <- if(url == "", do: {:error, :empty}, else: :ok),
+         :ok <- if(byte_size(url) > @max_url, do: {:error, :too_long}, else: :ok),
+         :ok <-
+           if(String.match?(url, ~r/[[:space:][:cntrl:]]/), do: {:error, :invalid}, else: :ok),
+         %URI{scheme: scheme, host: host} = uri when is_binary(host) and host != "" <-
+           URI.parse(url),
+         :ok <- if(uri.userinfo, do: {:error, :credentials}, else: :ok),
+         :ok <- scheme_ok(String.downcase(scheme || ""), host) do
+      {:ok, url}
+    else
+      {:error, _why} = error -> error
+      _no_host -> {:error, :invalid}
+    end
+  end
+
+  def check_url(_other), do: {:error, :empty}
+
+  defp scheme_ok("https", _host), do: :ok
+  defp scheme_ok("http", host), do: if(private_host?(host), do: :ok, else: {:error, :insecure})
+  defp scheme_ok(_other, _host), do: {:error, :scheme}
+
+  defp private_host?(host) do
+    host = String.downcase(host)
+
+    case :inet.parse_address(String.to_charlist(host)) do
+      {:ok, ip} -> private_ip?(ip)
+      {:error, _not_an_ip} -> host == "localhost" or String.ends_with?(host, ".local")
+    end
+  end
+
+  defp private_ip?({127, _, _, _}), do: true
+  defp private_ip?({10, _, _, _}), do: true
+  defp private_ip?({172, b, _, _}) when b in 16..31, do: true
+  defp private_ip?({192, 168, _, _}), do: true
+  defp private_ip?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
+  defp private_ip?(_other), do: false
 
   @doc "Sets a screen's mode. `:ok` or `{:error, :screen | :mode}`."
   def put_mode(name, mode) do

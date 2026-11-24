@@ -41,6 +41,7 @@ defmodule NunkiWeb.Router do
 
     get "/state", LocalApiController, :state
     post "/screen", LocalApiController, :screen
+    post "/screen_source", LocalApiController, :screen_source
     post "/audio", LocalApiController, :audio
     post "/hall_tournament", LocalApiController, :hall_tournament
     post "/identify", LocalApiController, :identify

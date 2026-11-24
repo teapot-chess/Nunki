@@ -492,6 +492,38 @@ defmodule NunkiWeb.ControlLiveTest do
       assert Nunki.Hall.screen("hdmi1")["tournament"] == nil
     end
 
+    test "a screen can show a web page: the address is checked, kept, and the screen follows" do
+      {:ok, view, _html} = live(local_conn(), "/")
+      {:ok, hall, _html} = live(local_conn(), "/hall?screen=hdmi2")
+      refute has_element?(view, "#screen-hdmi2-web-form")
+      assert has_element?(view, "#screen-hdmi2-source-hall[aria-pressed=true]")
+
+      # "Web page" with no address yet only opens the field.
+      view |> element("#screen-hdmi2-source-web") |> render_click()
+      assert has_element?(view, "#screen-hdmi2-web-form")
+      assert Nunki.Hall.screen("hdmi2")["source"] == "hall"
+
+      view |> form("#screen-hdmi2-web-form", %{"url" => "http://example.org/"}) |> render_submit()
+      assert has_element?(view, "#screen-hdmi2-web-error")
+      assert Nunki.Hall.screen("hdmi2")["source"] == "hall"
+
+      url = "https://openresults.cloud/t/club/live/3/all"
+      view |> form("#screen-hdmi2-web-form", %{"url" => url}) |> render_submit()
+      refute has_element?(view, "#screen-hdmi2-web-error")
+      assert Nunki.Hall.screen("hdmi2")["source"] == "web"
+      assert has_element?(view, "#screen-hdmi2-source-web[aria-pressed=true]")
+      assert has_element?(view, "#screen-hdmi2-preview", "openresults.cloud")
+      eventually(fn -> has_element?(hall, "#hall-web[data-url='#{url}']") end)
+
+      # Back to the broadcast; the address is remembered for the way back.
+      view |> element("#screen-hdmi2-source-hall") |> render_click()
+      assert Nunki.Hall.screen("hdmi2")["source"] == "hall"
+      refute has_element?(view, "#screen-hdmi2-web-form")
+      view |> element("#screen-hdmi2-source-web") |> render_click()
+      assert Nunki.Hall.screen("hdmi2")["source"] == "web"
+      assert has_element?(view, "#screen-hdmi2-web-url[value='#{url}']")
+    end
+
     test "the sound switch: off says so plainly, and nothing is said" do
       {:ok, view, _html} = live(local_conn(), "/")
       view |> element("#audio-toggle") |> render_click()

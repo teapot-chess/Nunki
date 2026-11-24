@@ -167,6 +167,41 @@ defmodule NunkiWeb.HallLiveTest do
       assert view |> element("#hall-pairings h1") |> render() =~ auto_round
     end
 
+    test "a web page fills the screen, follows the control page at once, and black still wins" do
+      {:ok, one, _html} = live(local_conn(), "/hall")
+      {:ok, two, _html} = live(local_conn(), "/hall?screen=hdmi2")
+      refute has_element?(two, "#hall-web")
+
+      url = "https://openresults.cloud/t/club/projector"
+      :ok = Nunki.Hall.put_source("hdmi2", "web", url)
+      eventually(fn -> has_element?(two, "#hall-web[data-url='#{url}'] [phx-hook]") end)
+      refute has_element?(two, "#hall-pairings")
+      refute has_element?(one, "#hall-web")
+
+      other = "http://192.168.1.20:4000/live"
+      :ok = Nunki.Hall.put_source("hdmi2", "web", other)
+      eventually(fn -> has_element?(two, "#hall-web[data-url='#{other}']") end)
+
+      :ok = Nunki.Hall.put_mode("hdmi2", "black")
+      eventually(fn -> has_element?(two, "#hall-black") end)
+      refute has_element?(two, "#hall-web")
+
+      :ok = Nunki.Hall.put_mode("hdmi2", "live")
+      eventually(fn -> has_element?(two, "#hall-web") end)
+
+      :ok = Nunki.Hall.put_source("hdmi2", "hall")
+      eventually(fn -> has_element?(two, "#hall") and not has_element?(two, "#hall-web") end)
+    end
+
+    test "a page opened after the choice shows the web page; identify still lands on it" do
+      :ok = Nunki.Hall.put_source("hdmi1", "web", "https://example.org/")
+      {:ok, view, _html} = live(local_conn(), "/hall")
+      assert has_element?(view, "#hall-web[data-url='https://example.org/']")
+
+      Nunki.Hall.identify()
+      eventually(fn -> has_element?(view, "#hall-identify", "1") end)
+    end
+
     test "identify: the screen's number, over anything, black included" do
       Nunki.Hall.put_mode("hdmi2", "black")
       {:ok, one, _html} = live(local_conn(), "/hall")

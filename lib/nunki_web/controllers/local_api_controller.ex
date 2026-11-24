@@ -29,6 +29,22 @@ defmodule NunkiWeb.LocalApiController do
     end
   end
 
+  def screen_source(conn, _params) do
+    with {:ok, body} <- body(conn),
+         {:ok, screen} <- screen_param(body),
+         {:ok, source} <-
+           fetch(body, "source", &is_binary/1, "source must be hall or web"),
+         {:ok, url} <-
+           fetch(body, "url", &(is_nil(&1) or is_binary(&1)), "url must be an address or null",
+             optional: true
+           ),
+         :ok <- Hall.put_source(screen, source, url) |> source_words() do
+      json(conn, state())
+    else
+      error -> refuse(conn, error)
+    end
+  end
+
   def audio(conn, _params) do
     with {:ok, body} <- body(conn),
          {:ok, on?} <- fetch(body, "enabled", &is_boolean/1, "enabled must be true or false") do
@@ -76,6 +92,8 @@ defmodule NunkiWeb.LocalApiController do
          %{
            "mode" => s["mode"],
            "tournament" => s["tournament"],
+           "source" => s["source"],
+           "url" => s["url"],
            "shows" => shown && shown["id"],
            "countdown" => shown && countdown(shown["id"])
          }}
@@ -157,12 +175,34 @@ defmodule NunkiWeb.LocalApiController do
     end
   end
 
-  defp fetch(body, key, valid?, message) do
+  defp fetch(body, key, valid?, message, opts \\ []) do
     case Map.fetch(body, key) do
       {:ok, value} -> if valid?.(value), do: {:ok, value}, else: {:error, 422, message}
-      :error -> {:error, 422, message}
+      :error -> if opts[:optional], do: {:ok, nil}, else: {:error, 422, message}
     end
   end
+
+  defp source_words(:ok), do: :ok
+  defp source_words({:error, :source}), do: {:error, 422, "source must be hall or web"}
+
+  defp source_words({:error, :no_url}),
+    do: {:error, 422, "a web page needs an address (url)"}
+
+  defp source_words({:error, {:url, why}}), do: {:error, 422, url_words(why)}
+  defp source_words({:error, _other}), do: {:error, 422, "that is not a screen"}
+
+  defp url_words(:empty), do: "the address is empty"
+  defp url_words(:too_long), do: "the address is too long (2000 characters at most)"
+  defp url_words(:invalid), do: "that is not a web address (https://host/path)"
+  defp url_words(:credentials), do: "the address must not contain a user name or password"
+
+  defp url_words(:scheme),
+    do: "the address must start with https:// (http:// only on the local network)"
+
+  defp url_words(:insecure),
+    do:
+      "http:// is only accepted for this machine and the local network " <>
+        "(localhost, 10.x, 172.16-31.x, 192.168.x, *.local); use https:// for anything else"
 
   defp words(:ok, _message), do: :ok
   defp words({:error, _why}, message), do: {:error, 422, message}

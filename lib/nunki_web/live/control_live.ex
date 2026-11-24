@@ -46,6 +46,8 @@ defmodule NunkiWeb.ControlLive do
        update_failed: nil,
        update_asked_at: nil,
        drafts: %{},
+       web_edit: MapSet.new(),
+       web_errors: %{},
        ticking?: false,
        pin_error: nil,
        pin_form: to_form(%{"pin" => ""}, as: :pin)
@@ -79,7 +81,7 @@ defmodule NunkiWeb.ControlLive do
       autostart?: Autostart.supported?() and Autostart.enabled?(),
       speech_form: speech_form(settings),
       audio?: Hall.audio?(),
-      screens: screens(),
+      screens: screens(socket.assigns),
       tournament_options: Enum.map(rows, &{&1.name, &1.id}),
       advanced?: settings["advanced"] == true,
       device_form: to_form(%{"name" => Store.device_name()}, as: :device)
@@ -89,7 +91,7 @@ defmodule NunkiWeb.ControlLive do
   end
 
   # The two broadcast screens, as the cards at the top show them.
-  defp screens do
+  defp screens(assigns) do
     tournaments = Store.tournaments()
     countdowns = Countdown.all()
 
@@ -102,6 +104,11 @@ defmodule NunkiWeb.ControlLive do
         number: String.replace_prefix(name, "hdmi", ""),
         mode: s["mode"],
         tournament: s["tournament"],
+        source: s["source"],
+        url: s["url"],
+        web?: s["source"] == "web",
+        editing?: s["source"] == "web" or MapSet.member?(assigns.web_edit, name),
+        url_error: assigns.web_errors[name],
         shown_name: shown && get_in(shown, ["tournament", "name"]),
         round: payload && payload["round"],
         countdown: shown && countdowns[shown["id"]]
@@ -344,6 +351,36 @@ defmodule NunkiWeb.ControlLive do
 
       {:error, _why} ->
         {:noreply, put_flash(socket, :error, gettext("That tournament is not joined here."))}
+    end
+  end
+
+  # Hall broadcast or a web page. "Web page" with an address already known is
+  # applied at once; without one it only opens the address field, and nothing
+  # changes on the screen until an address is sent.
+  def handle_event("screen_source", %{"screen" => screen, "source" => "web"}, socket) do
+    case Hall.put_source(screen, "web") do
+      :ok ->
+        {:noreply, socket |> forget_web_edit(screen) |> load()}
+
+      {:error, _no_url_yet} ->
+        edit = MapSet.put(socket.assigns.web_edit, screen)
+        {:noreply, socket |> assign(web_edit: edit) |> load()}
+    end
+  end
+
+  def handle_event("screen_source", %{"screen" => screen, "source" => "hall"}, socket) do
+    Hall.put_source(screen, "hall")
+    {:noreply, socket |> forget_web_edit(screen) |> load()}
+  end
+
+  def handle_event("screen_web", %{"screen" => screen, "url" => url}, socket) do
+    case Hall.put_source(screen, "web", url) do
+      :ok ->
+        {:noreply, socket |> forget_web_edit(screen) |> load()}
+
+      {:error, why} ->
+        errors = Map.put(socket.assigns.web_errors, screen, url_error(why))
+        {:noreply, socket |> assign(web_errors: errors) |> load()}
     end
   end
 
@@ -597,6 +634,9 @@ defmodule NunkiWeb.ControlLive do
               <%= cond do %>
                 <% s.mode == "black" -> %>
                   <span class="preview-black">{gettext("Black")}</span>
+                <% s.web? -> %>
+                  <span class="preview-label">{gettext("Web page")}</span>
+                  <span class="preview-clock preview-host">{source_host(s.url)}</span>
                 <% s.countdown && !s.countdown.started? -> %>
                   <span class="preview-label">
                     {gettext("Round %{round} starts in", round: s.countdown.round)}
@@ -612,7 +652,7 @@ defmodule NunkiWeb.ControlLive do
                 <% true -> %>
                   <span class="preview-label">{gettext("Waiting for the pairings.")}</span>
               <% end %>
-              <span :if={s.shown_name} class="preview-name">{s.shown_name}</span>
+              <span :if={s.shown_name && !s.web?} class="preview-name">{s.shown_name}</span>
               <span :if={s.mode == "paused"} class="preview-badge">{gettext("Paused")}</span>
             </div>
 
@@ -636,7 +676,71 @@ defmodule NunkiWeb.ControlLive do
               </button>
             </div>
 
+            <div
+              class="segmented segmented-two"
+              role="group"
+              aria-label={gettext("What screen %{number} shows", number: s.number)}
+            >
+              <button
+                id={"screen-#{s.name}-source-hall"}
+                type="button"
+                aria-pressed={to_string(!s.editing?)}
+                class="seg seg-hall"
+                phx-click="screen_source"
+                phx-value-screen={s.name}
+                phx-value-source="hall"
+              >
+                <.icon name="screen" />
+                <span>{gettext("Hall broadcast")}</span>
+              </button>
+              <button
+                id={"screen-#{s.name}-source-web"}
+                type="button"
+                aria-pressed={to_string(s.editing?)}
+                class="seg seg-web"
+                phx-click="screen_source"
+                phx-value-screen={s.name}
+                phx-value-source="web"
+              >
+                <.icon name="expand" />
+                <span>{gettext("Web page")}</span>
+              </button>
+            </div>
+
             <form
+              :if={s.editing?}
+              id={"screen-#{s.name}-web-form"}
+              class="screen-web"
+              phx-submit="screen_web"
+            >
+              <input type="hidden" name="screen" value={s.name} />
+              <div class="screen-web-row">
+                <.input
+                  id={"screen-#{s.name}-web-url"}
+                  type="text"
+                  name="url"
+                  value={s.url || ""}
+                  label={gettext("Address of the page")}
+                  placeholder="https://openresults.cloud/t/…/live/1/all"
+                  autocomplete="off"
+                  inputmode="url"
+                />
+                <.button id={"screen-#{s.name}-web-show"} type="submit">
+                  {gettext("Show")}
+                </.button>
+              </div>
+              <p
+                :if={s.url_error}
+                id={"screen-#{s.name}-web-error"}
+                class="screen-web-error"
+                role="alert"
+              >
+                {s.url_error}
+              </p>
+            </form>
+
+            <form
+              :if={!s.web?}
               id={"screen-#{s.name}-tournament-form"}
               class="screen-pick"
               phx-change="screen_tournament"
@@ -1074,6 +1178,42 @@ defmodule NunkiWeb.ControlLive do
       </div>
     </Layouts.app>
     """
+  end
+
+  defp forget_web_edit(socket, screen) do
+    assign(socket,
+      web_edit: MapSet.delete(socket.assigns.web_edit, screen),
+      web_errors: Map.delete(socket.assigns.web_errors, screen)
+    )
+  end
+
+  defp url_error({:url, :empty}), do: gettext("Type the address of the page first.")
+
+  defp url_error({:url, :too_long}),
+    do: gettext("That address is too long (2000 characters at most).")
+
+  defp url_error({:url, :invalid}),
+    do: gettext("That is not a web address. It looks like https://example.org/page.")
+
+  defp url_error({:url, :credentials}),
+    do: gettext("The address must not contain a user name or password.")
+
+  defp url_error({:url, :scheme}),
+    do: gettext("The address must start with https:// (http:// only on the local network).")
+
+  defp url_error({:url, :insecure}),
+    do:
+      gettext(
+        "http:// is only accepted for this computer and the local network (localhost, 10.x, 172.16-31.x, 192.168.x, *.local). Use https:// for anything else."
+      )
+
+  defp url_error(_other), do: gettext("That address cannot be shown.")
+
+  defp source_host(url) do
+    case URI.parse(url) do
+      %URI{host: host} when is_binary(host) -> host
+      _none -> url
+    end
   end
 
   defp mode_label("live"), do: gettext("Live")
