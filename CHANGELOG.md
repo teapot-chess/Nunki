@@ -14,6 +14,8 @@ tagged so that a version can be skimmed:
 | [Verified] | checked against the real thing, no code change |
 
 ## [Unreleased]
+
+## [0.8.2] - 2026-11-24
 - [Security] **db_connection 2.10.3.** A fresh advisory (EEF-CVE-2026-133555) against 2.10.2; the dependency audit noticed before anyone else had to.
 
 ## [0.8.1] - 2026-11-24
