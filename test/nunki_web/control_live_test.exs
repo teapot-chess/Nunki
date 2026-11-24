@@ -503,6 +503,11 @@ defmodule NunkiWeb.ControlLiveTest do
       assert has_element?(view, "#screen-hdmi2-web-form")
       assert Nunki.Hall.screen("hdmi2")["source"] == "hall"
 
+      # Show with the field empty: asked for an address, not told it cannot be shown.
+      view |> form("#screen-hdmi2-web-form", %{"url" => ""}) |> render_submit()
+      assert has_element?(view, "#screen-hdmi2-web-error", "Type the address of the page first.")
+      assert Nunki.Hall.screen("hdmi2")["source"] == "hall"
+
       view |> form("#screen-hdmi2-web-form", %{"url" => "http://example.org/"}) |> render_submit()
       assert has_element?(view, "#screen-hdmi2-web-error")
       assert Nunki.Hall.screen("hdmi2")["source"] == "hall"

@@ -1187,6 +1187,9 @@ defmodule NunkiWeb.ControlLive do
     )
   end
 
+  # An empty field on a screen that never had an address: `Hall.put_source/3`
+  # falls back to the stored one, finds none, and says :no_url.
+  defp url_error(:no_url), do: gettext("Type the address of the page first.")
   defp url_error({:url, :empty}), do: gettext("Type the address of the page first.")
 
   defp url_error({:url, :too_long}),

@@ -215,7 +215,9 @@ so.
   the second screen (plain `/hall` is `hdmi1`); each has its own mode
   (live, paused: frozen on what it shows, black: nothing at all) and its own
   tournament, kept across restarts. `?t=<id>` picks a tournament whatever
-  the screen was told.
+  the screen was told. A screen can also show a web page instead of the
+  broadcast (OpenResults' live boards, say): `https://` anywhere, `http://`
+  only on this machine and the hall's own network.
 - **`/api/local/v1`**, a JSON API for programs on this machine only (the
   Raspberry Pi image's touch menu): the screens, the sound, identify, stop.
   See [docs/local-api.md](docs/local-api.md).

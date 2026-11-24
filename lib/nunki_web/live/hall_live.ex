@@ -228,13 +228,21 @@ defmodule NunkiWeb.HallLive do
               this.el.append(this.overlay)
               this.probe()
             },
+            // A probe still on its way when the frame goes (black, the
+            // broadcast, a new address) must not come back and start the
+            // loop again on an element nobody sees: `gone` stops it, and the
+            // probe in flight is aborted.
             destroyed() {
+              this.gone = true
               clearTimeout(this.timer)
+              if (this.ctl) this.ctl.abort()
             },
             async probe() {
+              if (this.gone) return
               let ok = false
               try {
                 const ctl = new AbortController()
+                this.ctl = ctl
                 const t = setTimeout(() => ctl.abort(), 8000)
                 await fetch(this.url, { mode: "no-cors", cache: "no-store", signal: ctl.signal })
                 clearTimeout(t)
@@ -242,6 +250,8 @@ defmodule NunkiWeb.HallLive do
               } catch (_e) {
                 ok = false
               }
+
+              if (this.gone) return
 
               if (ok && !this.up) {
                 this.show()
