@@ -65,7 +65,7 @@ msgstr ""
 msgid "Countdown"
 msgstr ""
 
-#: lib/nunki_web/components/core_components.ex:79
+#: lib/nunki_web/components/core_components.ex:81
 #, elixir-autogen, elixir-format
 msgid "Dismiss"
 msgstr ""
@@ -95,7 +95,7 @@ msgstr ""
 msgid "Follow the tournament"
 msgstr ""
 
-#: lib/nunki_web/live/hall_live.ex:294
+#: lib/nunki_web/live/hall_live.ex:296
 #, elixir-autogen, elixir-format
 msgid "Full screen"
 msgstr ""
@@ -239,7 +239,7 @@ msgstr ""
 msgid "No speech engine found on this machine."
 msgstr ""
 
-#: lib/nunki_web/live/hall_live.ex:356
+#: lib/nunki_web/live/hall_live.ex:358
 #, elixir-autogen, elixir-format
 msgid "No tournament joined yet."
 msgstr ""
@@ -321,12 +321,12 @@ msgid "Removed."
 msgstr ""
 
 #: lib/nunki_web/live/control_live.ex:651
-#: lib/nunki_web/live/hall_live.ex:333
+#: lib/nunki_web/live/hall_live.ex:335
 #, elixir-autogen, elixir-format
 msgid "Round %{round}"
 msgstr ""
 
-#: lib/nunki_web/live/hall_live.ex:328
+#: lib/nunki_web/live/hall_live.ex:330
 #, elixir-autogen, elixir-format
 msgid "Round %{round} has started"
 msgstr ""
@@ -338,7 +338,7 @@ msgid "Round %{round} has started."
 msgstr ""
 
 #: lib/nunki_web/live/control_live.ex:642
-#: lib/nunki_web/live/hall_live.ex:321
+#: lib/nunki_web/live/hall_live.ex:323
 #, elixir-autogen, elixir-format
 msgid "Round %{round} starts in"
 msgstr ""
@@ -488,7 +488,7 @@ msgid "Updating. Nunki stops and comes back in about a minute; this page reconne
 msgstr ""
 
 #: lib/nunki_web/live/control_live.ex:653
-#: lib/nunki_web/live/hall_live.ex:354
+#: lib/nunki_web/live/hall_live.ex:356
 #, elixir-autogen, elixir-format
 msgid "Waiting for the pairings."
 msgstr ""
@@ -498,7 +498,7 @@ msgstr ""
 msgid "What is new"
 msgstr ""
 
-#: lib/nunki_web/live/hall_live.ex:344
+#: lib/nunki_web/live/hall_live.ex:346
 #, elixir-autogen, elixir-format
 msgid "bye"
 msgstr ""
@@ -867,7 +867,7 @@ msgstr ""
 msgid "Type the address of the page first."
 msgstr ""
 
-#: lib/nunki_web/live/hall_live.ex:205
+#: lib/nunki_web/live/hall_live.ex:207
 #, elixir-autogen, elixir-format
 msgid "Waiting for the page; trying again"
 msgstr ""

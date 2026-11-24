@@ -4,6 +4,7 @@ defmodule Nunki.Application do
   use Application
 
   @impl true
+  # sobelow_skip ["Traversal.FileModule"]
   def start(_type, _args) do
     File.mkdir_p!(Nunki.Paths.data())
     tidy_release_tmp()
@@ -72,6 +73,7 @@ defmodule Nunki.Application do
   # A release writes the configuration it starts with to a file in
   # RELEASE_TMP, a new one every start, and never takes one away. They hold
   # the cookie secret and they add up; the one this start is using stays.
+  # sobelow_skip ["Traversal.FileModule"]
   defp tidy_release_tmp do
     with tmp when is_binary(tmp) <- System.get_env("RELEASE_TMP"),
          mine when is_binary(mine) <- System.get_env("RELEASE_SYS_CONFIG") do

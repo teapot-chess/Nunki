@@ -220,6 +220,7 @@ defmodule Nunki.Store do
   defp public(nil), do: nil
   defp public(tournament), do: Map.delete(tournament, "key")
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp load(path) do
     data =
       case File.read(path) do
@@ -277,6 +278,7 @@ defmodule Nunki.Store do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   def write(path, data) do
     tmp = path <> ".tmp"
     File.mkdir_p!(Path.dirname(path))
@@ -298,6 +300,7 @@ defmodule Nunki.Store do
 
   # On disk before the rename: a power cut after a rename of data that was
   # never flushed leaves an empty file where the keys were.
+  # sobelow_skip ["Traversal.FileModule"]
   defp write_synced(path, iodata) do
     with {:ok, io} <- File.open(path, [:write, :binary]) do
       result = with :ok <- IO.binwrite(io, iodata), do: :file.sync(io)

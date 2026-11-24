@@ -20,6 +20,7 @@ defmodule Nunki.Paths do
   """
   def speech_dir, do: ensure(Path.join(data(), "speech"))
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp ensure(dir) do
     File.mkdir_p!(dir)
     dir

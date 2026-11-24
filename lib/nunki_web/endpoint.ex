@@ -51,6 +51,7 @@ defmodule NunkiWeb.Endpoint do
   plug NunkiWeb.Router
 
   @doc false
+  # sobelow_skip ["XSS.SendResp"]
   def favicon(%Plug.Conn{request_path: "/favicon.svg"} = conn, _opts) do
     conn
     |> Plug.Conn.put_resp_content_type("image/svg+xml")

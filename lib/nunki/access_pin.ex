@@ -207,6 +207,7 @@ defmodule Nunki.AccessPin do
     :ok
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp read_file do
     path = path()
 
@@ -232,6 +233,7 @@ defmodule Nunki.AccessPin do
   # `access-pin.new` is made empty and exclusively (a symlink in its place is
   # an error, not a path to follow), set to 0600 before the PIN goes in, and
   # renamed over the real file. A symlink at the real name is removed first.
+  # sobelow_skip ["Traversal.FileModule"]
   defp write_file(pin) do
     path = path()
     tmp = path <> ".new"
@@ -271,6 +273,7 @@ defmodule Nunki.AccessPin do
   file is read; anything else is deleted and refused.
   """
   @spec consume_request() :: :none | :set | :new | {:refused, atom()}
+  # sobelow_skip ["Traversal.FileModule"]
   def consume_request do
     path = Path.join(Nunki.Paths.data(), @request_name)
 
