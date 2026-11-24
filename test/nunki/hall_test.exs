@@ -18,10 +18,91 @@ defmodule Nunki.HallTest do
   end
 
   test "both screens start live and automatic" do
-    assert Hall.all() == %{
-             "hdmi1" => %{"mode" => "live", "tournament" => nil},
-             "hdmi2" => %{"mode" => "live", "tournament" => nil}
-           }
+    fresh = %{"mode" => "live", "tournament" => nil, "source" => "hall", "url" => nil}
+    assert Hall.all() == %{"hdmi1" => fresh, "hdmi2" => fresh}
+  end
+
+  describe "a web page instead of the broadcast" do
+    test "kept per screen, survives a restart, is broadcast, and the address outlives a switch back" do
+      Nunki.subscribe()
+      assert :ok = Hall.put_source("hdmi2", "web", " https://openresults.cloud/t/x/live/1/all ")
+      assert_receive {:hall_screen, "hdmi2", %{"source" => "web", "url" => url}}
+      assert url == "https://openresults.cloud/t/x/live/1/all"
+
+      Store.reload()
+      assert Hall.screen("hdmi2")["source"] == "web"
+      assert Hall.screen("hdmi1")["source"] == "hall"
+
+      assert :ok = Hall.put_source("hdmi2", "hall")
+      assert Hall.screen("hdmi2")["source"] == "hall"
+      assert Hall.screen("hdmi2")["url"] == url
+
+      # "web" without an address uses the one it has.
+      assert :ok = Hall.put_source("hdmi2", "web")
+      assert Hall.screen("hdmi2")["source"] == "web"
+    end
+
+    test "web without any address, an unknown screen or source are refused" do
+      assert {:error, :no_url} = Hall.put_source("hdmi1", "web")
+      assert {:error, :no_url} = Hall.put_source("hdmi1", "web", "   ")
+      assert {:error, :screen} = Hall.put_source("hdmi3", "hall")
+      assert {:error, :source} = Hall.put_source("hdmi1", "video")
+      assert {:error, {:url, :insecure}} = Hall.put_source("hdmi1", "web", "http://example.org")
+    end
+
+    test "which addresses are accepted" do
+      ok = [
+        "https://openresults.cloud/t/club/projector",
+        "HTTPS://Example.org",
+        "https://192.168.1.5:8080/x",
+        "https://8.8.8.8/",
+        "http://localhost:4000/",
+        "http://127.0.0.1/",
+        "http://10.1.2.3/",
+        "http://172.16.0.1/",
+        "http://172.31.255.254/",
+        "http://192.168.0.10/live",
+        "http://[::1]/",
+        "http://hall-pi.local/board",
+        "http://Hall.LOCAL:8080"
+      ]
+
+      for url <- ok, do: assert({:ok, _} = Hall.check_url(url), url)
+
+      bad = [
+        {"", :empty},
+        {"   ", :empty},
+        {"openresults.cloud/t/x", :invalid},
+        {"https://", :invalid},
+        {"https://exa mple.org", :invalid},
+        {"ftp://example.org/f", :scheme},
+        {"javascript:alert(1)", :invalid},
+        {"file:///etc/passwd", :invalid},
+        {"//example.org", :scheme},
+        {"https://user:pw@example.org/", :credentials},
+        {"http://example.org/", :insecure},
+        {"http://8.8.8.8/", :insecure},
+        {"http://172.32.0.1/", :insecure},
+        {"http://172.15.0.1/", :insecure},
+        {"http://192.169.0.1/", :insecure},
+        {"http://11.0.0.1/", :insecure},
+        {"http://localhost.example.org/", :insecure},
+        {"http://notlocal/", :insecure},
+        {"http://example.local.evil.org/", :insecure},
+        {"https://" <> String.duplicate("a", 2_100) <> ".org", :too_long}
+      ]
+
+      for {url, why} <- bad, do: assert({:error, ^why} = Hall.check_url(url), url)
+    end
+
+    test "an address edited into state.json by hand that would be refused is ignored" do
+      Store.put_setting("screens", %{
+        "hdmi1" => %{"source" => "web", "url" => "http://example.org/"}
+      })
+
+      assert Hall.screen("hdmi1")["source"] == "hall"
+      assert Hall.screen("hdmi1")["url"] == nil
+    end
   end
 
   test "a mode is kept per screen, survives a restart, and is broadcast" do

@@ -48,12 +48,16 @@ defmodule NunkiWeb.LocalApiTest do
                "hdmi1" => %{
                  "mode" => "live",
                  "tournament" => nil,
+                 "source" => "hall",
+                 "url" => nil,
                  "shows" => nil,
                  "countdown" => nil
                },
                "hdmi2" => %{
                  "mode" => "live",
                  "tournament" => nil,
+                 "source" => "hall",
+                 "url" => nil,
                  "shows" => nil,
                  "countdown" => nil
                }
@@ -150,6 +154,56 @@ defmodule NunkiWeb.LocalApiTest do
     assert api(:post, "/hall_tournament", %{"id" => "nope"}) |> json_response(422)
     assert api(:post, "/hall_tournament", %{}) |> json_response(422)
     assert api(:post, "/hall_tournament", %{"screen" => "tv", "id" => nil}) |> json_response(422)
+  end
+
+  test "POST /screen_source: the broadcast or a web page, with the address checked" do
+    Nunki.subscribe()
+    url = "https://openresults.cloud/t/club/live/2/all"
+
+    body =
+      api(:post, "/screen_source", %{"screen" => "hdmi2", "source" => "web", "url" => url})
+      |> json_response(200)
+
+    assert body["screens"]["hdmi2"]["source"] == "web"
+    assert body["screens"]["hdmi2"]["url"] == url
+    assert body["screens"]["hdmi1"]["source"] == "hall"
+    assert_receive {:hall_screen, "hdmi2", %{"source" => "web"}}
+
+    body =
+      api(:post, "/screen_source", %{"screen" => "hdmi2", "source" => "hall"})
+      |> json_response(200)
+
+    assert body["screens"]["hdmi2"]["source"] == "hall"
+    assert body["screens"]["hdmi2"]["url"] == url
+
+    body =
+      api(:post, "/screen_source", %{"screen" => "hdmi2", "source" => "web"})
+      |> json_response(200)
+
+    assert body["screens"]["hdmi2"]["source"] == "web"
+
+    lan = api(:post, "/screen_source", %{"source" => "web", "url" => "http://192.168.1.9:4000/x"})
+    assert json_response(lan, 200)["screens"]["hdmi1"]["url"] == "http://192.168.1.9:4000/x"
+  end
+
+  test "POST /screen_source: refusals say why" do
+    public = api(:post, "/screen_source", %{"source" => "web", "url" => "http://example.org/"})
+    assert json_response(public, 422)["error"] =~ "http:// is only accepted"
+
+    for {body, words} <- [
+          {%{"source" => "web", "url" => "ftp://example.org"}, "https://"},
+          {%{"source" => "web", "url" => "nonsense"}, "not a web address"},
+          {%{"source" => "web"}, "needs an address"},
+          {%{"source" => "web", "url" => 5}, "url must be"},
+          {%{"source" => "video"}, "source must be"},
+          {%{}, "source must be"},
+          {%{"screen" => "tv", "source" => "hall"}, "screen must be"}
+        ] do
+      assert json_response(api(:post, "/screen_source", body), 422)["error"] =~ words,
+             inspect(body)
+    end
+
+    assert Hall.screen("hdmi1")["source"] == "hall"
   end
 
   test "POST /identify tells the screens; POST /stop stops speaking" do

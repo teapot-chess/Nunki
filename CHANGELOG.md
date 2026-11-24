@@ -15,6 +15,12 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-24
+
+- [Feature] **A monitor can show a web page instead of the broadcast.** Under each screen on the control page: "Hall broadcast" (as before) or "Web page", with an address. Screen 1 keeps the pairings, Screen 2 shows OpenResults' live boards (`/t/<slug>/live/<round>/all`) or its projector view, and nobody walks to the Pi with a keyboard. The page is shown full screen inside the hall page, so the change reaches the monitor the moment it is made, and a page that cannot be reached gets a small "trying again" note and a retry every few seconds until it can. The address survives a restart, and survives a trip back to the broadcast: switching back does not mean typing it again. Black still blacks it out; Paused cannot freeze somebody else's page and does not try. It works the same on a PC, where the Windows or Mac app opens the hall screen in its own window. The page has to be willing to be framed; OpenResults' public pages are, projector and live boards included.
+- [Security] **Only addresses worth showing in a hall are accepted.** `https://` to anywhere; `http://` only for this computer and the hall's own network (localhost, 10.x, 172.16-31.x, 192.168.x, `*.local`), because an unencrypted page from the internet is an invitation to whoever sits on the way. No `user:password@`, no spaces, no novels. Anything else is refused with a sentence saying why. The frame is sandboxed: it may run its own scripts, it may not take over the hall page.
+- [Feature] **The local API learned it too.** `POST /api/local/v1/screen_source` sets `hall` or `web` (and the address) per screen, and `GET /state` reports `source` and `url` for each; the contract, and what a small-screen menu needs to offer it, is in [docs/local-api.md](docs/local-api.md). Additive, so v1 stays v1.
+
 ## [0.7.0] - 2026-11-14
 
 Published as a pre-release: a work in progress for the Raspberry Pi image. 0.6.0 was never published, so its notes (below) arrive with this one.

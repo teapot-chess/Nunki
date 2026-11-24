@@ -82,11 +82,12 @@ survive a restart. A change reaches the open `/hall` pages at once.
   "audio": true,
   "hall_tournament": null,
   "screens": {
-    "hdmi1": {"mode": "live", "tournament": null, "shows": "Ab3dEf9h",
+    "hdmi1": {"mode": "live", "tournament": null, "source": "hall", "url": null, "shows": "Ab3dEf9h",
               "countdown": {"tournament_id": "Ab3dEf9h", "round": 4,
                             "ends_at": "2026-11-15T10:05:00Z", "started": false}},
-    "hdmi2": {"mode": "black", "tournament": "Zz81Qq0w", "shows": "Zz81Qq0w",
-              "countdown": null}
+    "hdmi2": {"mode": "live", "tournament": "Zz81Qq0w", "source": "web",
+              "url": "https://openresults.cloud/t/club/live/4/all",
+              "shows": "Zz81Qq0w", "countdown": null}
   },
   "tournaments": [
     {"id": "Ab3dEf9h", "name": "Club Championship", "connected": true},
@@ -95,7 +96,7 @@ survive a restart. A change reaches the open `/hall` pages at once.
   "countdown": {"tournament_id": "Ab3dEf9h", "round": 4,
                 "ends_at": "2026-11-15T10:05:00Z", "started": false},
   "speaking": false,
-  "version": "0.7.0"
+  "version": "0.8.0"
 }
 ```
 
@@ -106,6 +107,8 @@ survive a restart. A change reaches the open `/hall` pages at once.
 | `hall_tournament` | `hdmi1`'s chosen tournament id, or `null` for automatic |
 | `screens.<name>.mode` | `live`, `paused` or `black` |
 | `screens.<name>.tournament` | the chosen tournament id, or `null` = automatic |
+| `screens.<name>.source` | `hall` (Nunki's broadcast) or `web` (a web page, see below) |
+| `screens.<name>.url` | the web page's address, or `null`. Kept while `source` is `hall`, so switching back to `web` needs no typing |
 | `screens.<name>.shows` | the tournament the screen actually shows now (the choice, or the automatic pick), or `null` with nothing joined |
 | `screens.<name>.countdown` | that tournament's countdown, or `null` |
 | `tournaments` | the joined tournaments, oldest first; `connected` is whether the line to OpenPairings is up |
@@ -128,6 +131,41 @@ whose round has just started, else the first joined.
 ```
 
 `screen` is optional and defaults to `"hdmi1"`; `mode` is required.
+
+### `POST /screen_source`
+
+```json
+{"screen": "hdmi2", "source": "web", "url": "https://openresults.cloud/t/club/live/4/all"}
+```
+
+What a screen shows: `"hall"` is Nunki's broadcast (everything above);
+`"web"` shows the address full screen, in a frame inside the hall page (an
+OpenResults live-boards or projector page on one monitor, the pairings on the
+other). `screen` is optional (default `"hdmi1"`), `source` is required.
+`url` is required for `web` unless the screen already has an address (the
+previous one, kept); `null` or absent then means "that one". The change
+reaches the open hall page at once. If the page cannot be reached the screen
+says so and tries again by itself every few seconds, and reloads when the
+page is back.
+
+Which addresses are accepted: `https://` to anywhere; `http://` only to
+this machine and the hall's own network (`localhost`, `127.0.0.0/8`,
+`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `*.local`). No
+`user:password@`, at most 2000 characters, no spaces. Anything else is a 422
+with a sentence that can be shown as it is. `mode` still applies: `black`
+blacks a web page out too; `paused` cannot freeze somebody else's page and
+leaves it alone. The page must allow being framed (OpenResults' public pages
+do, projector and live boards included; a page that sends
+`X-Frame-Options` or a restrictive `frame-ancestors` shows up empty).
+
+What a small-screen menu needs: a "Source" choice per screen (Hall
+broadcast / Web page), and for the web page a way to give an address - the
+choices `state` returns are the only ones it must offer; typing 80
+characters on a 3.5 inch panel is better done by picking from a list of
+addresses the menu knows (for instance `https://openresults.cloud/t/<slug>/projector`
+for the tournaments on this box) or by taking the address on the phone page
+and leaving the panel with the two buttons: switch to the broadcast, switch
+back to the page that was set.
 
 ### `POST /audio`
 
