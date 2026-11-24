@@ -208,6 +208,8 @@ defmodule Nunki.MixProject do
         "deps.audit",
         "hex.audit",
         "sobelow --config",
+        "i18n.check",
+        "i18n.check plugins/openpairings_nunki/priv/gettext",
         "test"
       ]
     ]

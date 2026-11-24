@@ -311,7 +311,7 @@ msgid "speaking"
 msgstr ""
 
 #: lib/openpairings_nunki_web/live/tournament_live.ex:458
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Announce"
 msgstr ""
 

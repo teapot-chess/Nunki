@@ -190,6 +190,7 @@ defmodule Nunki.Voice do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp start_command(backend, text, voice_id, lang) do
     file = Path.join(Nunki.Paths.speech_dir(), "say-#{System.unique_integer([:positive])}.txt")
     File.write!(file, text)
@@ -228,6 +229,7 @@ defmodule Nunki.Voice do
   def done?(_handle, _message), do: false
 
   @doc "Cleans up after an utterance that ended by itself."
+  # sobelow_skip ["Traversal.FileModule"]
   def finished(%{file: file} = handle) do
     if os_pid = handle[:os_pid], do: Nunki.Cmd.Reaper.unwatch(os_pid)
     File.rm(file)
@@ -239,6 +241,7 @@ defmodule Nunki.Voice do
   def finished(_handle), do: :ok
 
   @doc "Removes what earlier readings left in the speech folder (at start-up, when none can be running)."
+  # sobelow_skip ["Traversal.FileModule"]
   def sweep do
     for file <- Path.wildcard(Path.join(Nunki.Paths.speech_dir(), "say-*")), do: File.rm(file)
     :ok

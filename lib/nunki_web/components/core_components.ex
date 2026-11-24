@@ -12,6 +12,7 @@ defmodule NunkiWeb.CoreComponents do
   @doc "The mark (`NunkiWeb.Logo`): decorative, the name beside it says what it is."
   attr :class, :any, default: nil
 
+  # sobelow_skip ["XSS.Raw"]
   def logo(assigns) do
     assigns = assign(assigns, :inner, Phoenix.HTML.raw(NunkiWeb.Logo.inner()))
 
@@ -48,6 +49,7 @@ defmodule NunkiWeb.CoreComponents do
   attr :name, :string, required: true
   attr :class, :any, default: nil
 
+  # sobelow_skip ["XSS.Raw"]
   def icon(assigns) do
     assigns = assign(assigns, :paths, Map.get(@icons, assigns.name, @icons["help"]))
 

@@ -65,7 +65,7 @@ msgstr "De server is niet bereikbaar. Controleer de link en het netwerk."
 msgid "Countdown"
 msgstr "Aftellen"
 
-#: lib/nunki_web/components/core_components.ex:79
+#: lib/nunki_web/components/core_components.ex:81
 #, elixir-autogen, elixir-format
 msgid "Dismiss"
 msgstr "Sluiten"
@@ -95,7 +95,7 @@ msgstr "Engelse stem"
 msgid "Follow the tournament"
 msgstr "Zoals het toernooi"
 
-#: lib/nunki_web/live/hall_live.ex:294
+#: lib/nunki_web/live/hall_live.ex:296
 #, elixir-autogen, elixir-format
 msgid "Full screen"
 msgstr "Volledig scherm"
@@ -239,7 +239,7 @@ msgstr "Nog geen indeling: er is niets om naar af te tellen."
 msgid "No speech engine found on this machine."
 msgstr "Geen spraakprogramma gevonden op deze computer."
 
-#: lib/nunki_web/live/hall_live.ex:356
+#: lib/nunki_web/live/hall_live.ex:358
 #, elixir-autogen, elixir-format
 msgid "No tournament joined yet."
 msgstr "Nog bij geen enkel toernooi aangesloten."
@@ -321,12 +321,12 @@ msgid "Removed."
 msgstr "Verwijderd."
 
 #: lib/nunki_web/live/control_live.ex:651
-#: lib/nunki_web/live/hall_live.ex:333
+#: lib/nunki_web/live/hall_live.ex:335
 #, elixir-autogen, elixir-format
 msgid "Round %{round}"
 msgstr "Ronde %{round}"
 
-#: lib/nunki_web/live/hall_live.ex:328
+#: lib/nunki_web/live/hall_live.ex:330
 #, elixir-autogen, elixir-format
 msgid "Round %{round} has started"
 msgstr "Ronde %{round} is begonnen"
@@ -338,7 +338,7 @@ msgid "Round %{round} has started."
 msgstr "Ronde %{round} is begonnen."
 
 #: lib/nunki_web/live/control_live.ex:642
-#: lib/nunki_web/live/hall_live.ex:321
+#: lib/nunki_web/live/hall_live.ex:323
 #, elixir-autogen, elixir-format
 msgid "Round %{round} starts in"
 msgstr "Ronde %{round} begint over"
@@ -488,7 +488,7 @@ msgid "Updating. Nunki stops and comes back in about a minute; this page reconne
 msgstr "Bezig met bijwerken. Nunki stopt en is over ongeveer een minuut terug; deze pagina maakt zelf weer verbinding."
 
 #: lib/nunki_web/live/control_live.ex:653
-#: lib/nunki_web/live/hall_live.ex:354
+#: lib/nunki_web/live/hall_live.ex:356
 #, elixir-autogen, elixir-format
 msgid "Waiting for the pairings."
 msgstr "Wachten op de indeling."
@@ -498,7 +498,7 @@ msgstr "Wachten op de indeling."
 msgid "What is new"
 msgstr "Wat is er nieuw"
 
-#: lib/nunki_web/live/hall_live.ex:344
+#: lib/nunki_web/live/hall_live.ex:346
 #, elixir-autogen, elixir-format
 msgid "bye"
 msgstr "vrij"
@@ -867,7 +867,7 @@ msgstr "Het adres moet beginnen met https:// (http:// alleen op het lokale netwe
 msgid "Type the address of the page first."
 msgstr "Typ eerst het adres van de pagina."
 
-#: lib/nunki_web/live/hall_live.ex:205
+#: lib/nunki_web/live/hall_live.ex:207
 #, elixir-autogen, elixir-format
 msgid "Waiting for the page; trying again"
 msgstr "Wachten op de pagina; we proberen opnieuw"
