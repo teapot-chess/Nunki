@@ -55,7 +55,7 @@ defmodule OpenPairingsNunkiWeb.LinkSocketTest do
     test "with a good key: welcome, and the announcer is online", %{t: t} = ctx do
       result = welcomed(ctx)
       assert [%{"type" => "welcome", "v" => 1, "tournament" => tour} | _] = frames(result)
-      assert tour == %{"id" => t.id, "name" => t.name}
+      assert tour == %{"id" => t.id, "name" => t.name, "results" => nil}
 
       a = Repo.get!(Announcer, ctx.announcer.id)
       assert a.connected
@@ -94,6 +94,53 @@ defmodule OpenPairingsNunkiWeb.LinkSocketTest do
 
       assert {:ok, %{announcer: nil}} =
                LinkSocket.handle_in({status, opcode: :text}, LinkSocket.new_state())
+    end
+  end
+
+  describe "the results address" do
+    setup %{t: t} do
+      PairingsEngine.Publishing.put_public_base("https://openresults.example")
+      on_exit(fn -> PairingsEngine.Publishing.put_public_base(nil) end)
+      %{t: t}
+    end
+
+    defp make_public!(t) do
+      t
+      |> Ecto.Changeset.change(publish_to_openresults: true, public_slug: "open-somewhere")
+      |> Repo.update!()
+    end
+
+    test "is null in welcome and round while the tournament is not public", %{t: t} = ctx do
+      publish!(t, 1)
+
+      assert [%{"tournament" => %{"results" => nil}}, _settings, %{"type" => "round"} = round] =
+               frames(welcomed(ctx))
+
+      assert Map.fetch!(round, "results") == nil
+    end
+
+    test "is the front page in welcome and round once it is public", %{t: t} = ctx do
+      publish!(t, 1)
+      make_public!(t)
+
+      assert [%{"tournament" => %{"results" => results}}, _settings, round] =
+               frames(welcomed(ctx))
+
+      assert results == "https://openresults.example/t/open-somewhere"
+      assert round["results"] == results
+    end
+
+    test "a change of address alone sends the round again, once", %{t: t} = ctx do
+      publish!(t, 1)
+      state = ctx |> welcomed() |> state()
+      make_public!(t)
+
+      result = LinkSocket.handle_info(:recheck, %{state | recheck: nil})
+
+      assert [%{"type" => "round", "results" => "https://openresults.example/t/open-somewhere"}] =
+               frames(result)
+
+      assert {:ok, _} = LinkSocket.handle_info(:recheck, state(result))
     end
   end
 

@@ -295,11 +295,12 @@ defmodule Nunki.Link do
   defp message(%{"type" => "welcome"} = welcome, state) do
     state = schedule_ping(state)
 
-    # The name may have changed in OpenPairings since the join.
+    # The name may have changed in OpenPairings since the join, and the
+    # results address (`results`, see `put_results/2`) may have arrived.
     case welcome["tournament"] do
-      %{"name" => name} when is_binary(name) ->
+      %{} = tournament ->
         Store.update_tournament(state.tournament, fn t ->
-          put_in(t, ["tournament", "name"], name)
+          t |> put_name(tournament["name"]) |> put_results(tournament)
         end)
 
       _other ->
@@ -341,7 +342,8 @@ defmodule Nunki.Link do
     state
   end
 
-  defp message(%{"type" => "round", "round" => %{} = payload}, state) do
+  defp message(%{"type" => "round", "round" => %{} = payload} = frame, state) do
+    Store.update_tournament(state.tournament, &put_results(&1, frame))
     Announcer.round_received(state.tournament, payload)
     state
   end
@@ -414,6 +416,26 @@ defmodule Nunki.Link do
   catch
     :exit, _reason -> %{"voice" => nil, "speaking" => false}
   end
+
+  defp put_name(t, name) when is_binary(name), do: put_in(t, ["tournament", "name"], name)
+  defp put_name(t, _other), do: t
+
+  # The tournament's public front page on the results site, as the server
+  # says it (`results` in the welcome's `tournament`, and beside `round`):
+  # an address is kept (https, or http inside the hall's network - the same
+  # rule as a screen's web page, at most 2000 characters), `null` clears it,
+  # an absent key changes nothing (a server older than the key), and an
+  # address that is not acceptable changes nothing either.
+  defp put_results(t, %{"results" => nil}), do: Map.delete(t, "results")
+
+  defp put_results(t, %{"results" => address}) when is_binary(address) do
+    case Nunki.Hall.check_url(address) do
+      {:ok, ok} -> Map.put(t, "results", String.trim_trailing(ok, "/"))
+      {:error, _why} -> t
+    end
+  end
+
+  defp put_results(t, _absent), do: t
 
   defp rooms_available(names) when is_list(names) do
     for name <- names, is_binary(name), do: String.slice(name, 0, 60)

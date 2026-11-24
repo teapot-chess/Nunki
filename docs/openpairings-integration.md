@@ -170,6 +170,12 @@ wrong, the QR code is wrong in the same way.
   "Public" is `PairingsEngine.Tournaments.round_published?/2`. A round
   taken back is not sent again, and a lower latest round is ignored; the
   device keeps what it had.
+- `welcome` and every `round` frame carry `results`: the tournament's public
+  front page on the results site (`PairingsEngineWeb.PublicLink.url/1`, nil
+  when `public?/1` is false). A round frame is also sent again when only that
+  address changed (the device does not read a round it already announced), so
+  a tournament that goes public later reaches the hall screens by itself.
+  Nunki's `boards` source uses it; see `docs/protocol.md`.
 - The payload is the printed pairing list's (boards, order, scores coming
   into the round, the tournament's rating method), as JSON identical to the
   Polis plugin's. Its `locale` is the tournament owner's account language;

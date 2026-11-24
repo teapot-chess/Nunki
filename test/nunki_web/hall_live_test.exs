@@ -193,6 +193,40 @@ defmodule NunkiWeb.HallLiveTest do
       eventually(fn -> has_element?(two, "#hall") and not has_element?(two, "#hall-web") end)
     end
 
+    test "live boards: the tournament's OpenResults page, or a plain message without one" do
+      id = tournament("Open A")
+      :ok = Nunki.Hall.put_source("hdmi2", "boards", nil, "1-4")
+      {:ok, two, _html} = live(local_conn(), "/hall?screen=hdmi2")
+
+      assert has_element?(two, "#hall-boards-missing")
+      refute has_element?(two, "#hall-web")
+
+      url = "https://openresults.cloud/t/open-a"
+      Store.update_tournament(id, &Map.put(&1, "results", url))
+
+      shown = url <> "/live/current/projector?kiosk=1&boards=1-4"
+      eventually(fn -> has_element?(two, "#hall-web[data-url='#{shown}'] [phx-hook]") end)
+      refute has_element?(two, "#hall-boards-missing")
+
+      :ok = Nunki.Hall.put_source("hdmi2", "boards", nil, "")
+      all = url <> "/live/current/projector?kiosk=1"
+      eventually(fn -> has_element?(two, "#hall-web[data-url='#{all}']") end)
+
+      :ok = Nunki.Hall.put_mode("hdmi2", "black")
+      eventually(fn -> has_element?(two, "#hall-black") end)
+      refute has_element?(two, "#hall-web")
+
+      :ok = Nunki.Hall.put_mode("hdmi2", "live")
+      Store.update_tournament(id, &Map.delete(&1, "results"))
+      eventually(fn -> has_element?(two, "#hall-boards-missing") end)
+    end
+
+    test "live boards with nothing joined says so" do
+      :ok = Nunki.Hall.put_source("hdmi1", "boards")
+      {:ok, view, _html} = live(local_conn(), "/hall")
+      assert has_element?(view, "#hall-boards-missing")
+    end
+
     test "a page opened after the choice shows the web page; identify still lands on it" do
       :ok = Nunki.Hall.put_source("hdmi1", "web", "https://example.org/")
       {:ok, view, _html} = live(local_conn(), "/hall")

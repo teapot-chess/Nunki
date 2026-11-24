@@ -529,6 +529,30 @@ defmodule NunkiWeb.ControlLiveTest do
       assert has_element?(view, "#screen-hdmi2-web-url[value='#{url}']")
     end
 
+    test "a screen can show the live boards: a selection, checked, and whether OpenResults is known" do
+      id = tournament()
+      {:ok, view, _html} = live(local_conn(), "/")
+      refute has_element?(view, "#screen-hdmi2-boards-form")
+
+      view |> element("#screen-hdmi2-source-boards") |> render_click()
+      assert Nunki.Hall.screen("hdmi2")["source"] == "boards"
+      assert has_element?(view, "#screen-hdmi2-source-boards[aria-pressed=true]")
+      assert has_element?(view, "#screen-hdmi2-boards-status")
+
+      view |> form("#screen-hdmi2-boards-form", %{"boards" => "9-1"}) |> render_submit()
+      assert has_element?(view, "#screen-hdmi2-boards-error")
+
+      view |> form("#screen-hdmi2-boards-form", %{"boards" => "1-4"}) |> render_submit()
+      refute has_element?(view, "#screen-hdmi2-boards-error")
+      assert Nunki.Hall.screen("hdmi2")["boards"] == "1-4"
+
+      Store.update_tournament(id, &Map.put(&1, "results", "https://openresults.cloud/t/x"))
+      assert render(view) =~ "openresults.cloud"
+
+      view |> element("#screen-hdmi2-source-hall") |> render_click()
+      refute has_element?(view, "#screen-hdmi2-boards-form")
+    end
+
     test "the sound switch: off says so plainly, and nothing is said" do
       {:ok, view, _html} = live(local_conn(), "/")
       view |> element("#audio-toggle") |> render_click()

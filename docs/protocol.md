@@ -72,6 +72,17 @@ names; absent (an older server): the room is free text. A refused room
 (`"error": "room"`) is said on the page. An announcer in a room is sent only
 that room's boards, and the payload says which room (`room`).
 
+## Where the results are
+
+`welcome` (in `tournament`) and `round` (beside `round`) may carry
+`results`: the tournament's public front page on the results site
+(`https://openresults.cloud/t/<slug>`), or `null` when it is not public.
+Nunki keeps it per tournament (`tournaments[].results` in the local API) and
+builds the live boards of a `boards` screen from it. `null` clears it, a
+frame without the key changes nothing (a server that does not know the key
+yet), and an address that is not `https://` (or `http://` inside the hall's
+own network) or longer than 2000 characters is ignored.
+
 ## What the server must not expect
 
 - A device to be connected. Announcing is the device's business; the

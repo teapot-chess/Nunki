@@ -26,18 +26,24 @@ defmodule OpenPairingsNunki.Protocol do
   @doc "Encodes a frame for the wire."
   def encode(frame), do: Jason.encode!(frame)
 
-  def welcome(server, tournament),
+  @doc """
+  `results` is the tournament's public front page on the results site, or
+  nil when it is not public: sent either way (null tells the device to forget
+  an address it had; a key that is absent would tell it nothing).
+  """
+  def welcome(server, tournament, results \\ nil),
     do: %{
       type: "welcome",
       v: @version,
       server: server,
-      tournament: %{id: tournament.id, name: tournament.name}
+      tournament: %{id: tournament.id, name: tournament.name, results: results}
     }
 
   def refused(reason) when reason in ~w(version key revoked),
     do: %{type: "refused", reason: reason}
 
-  def round(payload), do: %{type: "round", round: payload}
+  @doc "The round, with the tournament's `results` address beside it (see `welcome/3`)."
+  def round(payload, results \\ nil), do: %{type: "round", round: payload, results: results}
 
   def leave, do: %{type: "leave"}
 

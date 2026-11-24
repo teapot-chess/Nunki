@@ -82,16 +82,21 @@ survive a restart. A change reaches the open `/hall` pages at once.
   "audio": true,
   "hall_tournament": null,
   "screens": {
-    "hdmi1": {"mode": "live", "tournament": null, "source": "hall", "url": null, "shows": "Ab3dEf9h",
+    "hdmi1": {"mode": "live", "tournament": null, "source": "boards", "url": null,
+              "boards": "1-4",
+              "boards_url": "https://openresults.cloud/t/club/live/current/projector?kiosk=1&boards=1-4",
+              "shows": "Ab3dEf9h",
               "countdown": {"tournament_id": "Ab3dEf9h", "round": 4,
                             "ends_at": "2026-11-15T10:05:00Z", "started": false}},
     "hdmi2": {"mode": "live", "tournament": "Zz81Qq0w", "source": "web",
               "url": "https://openresults.cloud/t/club/live/4/all",
+              "boards": "", "boards_url": null,
               "shows": "Zz81Qq0w", "countdown": null}
   },
   "tournaments": [
-    {"id": "Ab3dEf9h", "name": "Club Championship", "connected": true},
-    {"id": "Zz81Qq0w", "name": "Youth Open", "connected": false}
+    {"id": "Ab3dEf9h", "name": "Club Championship", "connected": true,
+     "results": "https://openresults.cloud/t/club"},
+    {"id": "Zz81Qq0w", "name": "Youth Open", "connected": false, "results": null}
   ],
   "countdown": {"tournament_id": "Ab3dEf9h", "round": 4,
                 "ends_at": "2026-11-15T10:05:00Z", "started": false},
@@ -107,11 +112,13 @@ survive a restart. A change reaches the open `/hall` pages at once.
 | `hall_tournament` | `hdmi1`'s chosen tournament id, or `null` for automatic |
 | `screens.<name>.mode` | `live`, `paused` or `black` |
 | `screens.<name>.tournament` | the chosen tournament id, or `null` = automatic |
-| `screens.<name>.source` | `hall` (Nunki's broadcast) or `web` (a web page, see below) |
+| `screens.<name>.source` | `hall` (Nunki's broadcast), `web` (a web page) or `boards` (the live boards, see below) |
 | `screens.<name>.url` | the web page's address, or `null`. Kept while `source` is `hall`, so switching back to `web` needs no typing |
+| `screens.<name>.boards` | the selection of boards for the `boards` source, `""` = all boards. Kept while `source` is something else |
+| `screens.<name>.boards_url` | what a `boards` screen frames: the shown tournament's OpenResults address plus `/live/current/projector?kiosk=1` and `&boards=<selection>` when there is one; `null` when the shown tournament has no OpenResults address or nothing is joined. Filled whatever `source` is, so a menu can say "live boards available" |
 | `screens.<name>.shows` | the tournament the screen actually shows now (the choice, or the automatic pick), or `null` with nothing joined |
 | `screens.<name>.countdown` | that tournament's countdown, or `null` |
-| `tournaments` | the joined tournaments, oldest first; `connected` is whether the line to OpenPairings is up |
+| `tournaments` | the joined tournaments, oldest first; `connected` is whether the line to OpenPairings is up; `results` is the tournament's public front page on OpenResults (`https://<host>/t/<slug>`) as OpenPairings last said it, or `null` (not published, an OpenPairings that does not send it, or nothing heard yet) |
 | `countdown` | `screens.hdmi1.countdown` |
 | `speaking` | whether a line is being said right now |
 | `version` | Nunki's version |
@@ -141,7 +148,8 @@ whose round has just started, else the first joined.
 What a screen shows: `"hall"` is Nunki's broadcast (everything above);
 `"web"` shows the address full screen, in a frame inside the hall page (an
 OpenResults live-boards or projector page on one monitor, the pairings on the
-other). `screen` is optional (default `"hdmi1"`), `source` is required.
+other). `screen` is optional (default `"hdmi1"`), `source` is required (`hall`, `web` or `boards`).
+
 `url` is required for `web` unless the screen already has an address (the
 previous one, kept); `null` or absent then means "that one". The change
 reaches the open hall page at once. If the page cannot be reached the screen
@@ -157,6 +165,34 @@ blacks a web page out too; `paused` cannot freeze somebody else's page and
 leaves it alone. The page must allow being framed (OpenResults' public pages
 do, projector and live boards included; a page that sends
 `X-Frame-Options` or a restrictive `frame-ancestors` shows up empty).
+
+#### The live boards source
+
+```json
+{"screen": "hdmi2", "source": "boards", "boards": "5-10"}
+```
+
+`"boards"` shows the live boards of the screen's tournament - the one in
+`screens.<name>.shows`, so `POST /hall_tournament` keeps choosing it - on
+OpenResults, following the current round, without its chrome. The address
+is built from the tournament's `results` (OpenPairings sends it when the
+tournament is published; see `docs/protocol.md`) and is `boards_url`. The
+frame is the `web` source's own: a page that cannot be reached is said so
+and tried again, `black` blacks it out, `paused` leaves it alone.
+
+`boards` (optional) is the selection. Absent: the screen keeps its previous
+selection (default `""`, all boards); `""` is all boards. Otherwise
+comma-separated items, each `N` or `N-M` with `1 <= N <= M <= 999`
+(`1-4`, `5-10`, `1,3,7`, `1-3,7`), at most 20 items and 100 characters;
+spaces are ignored and the state shows the selection without them.
+Anything else is a 422 with a sentence to show. A selection sent with
+another source is ignored; `url` is ignored with `boards`.
+
+While the tournament has no OpenResults address (or nothing is joined) the
+screen says so, large ("Live boards: ... is not published on OpenResults"),
+and switches to the boards by itself as soon as the address arrives or
+changes, or the automatic pick moves to another tournament. The source and
+the selection are stored in `state.json` and survive a restart.
 
 What a small-screen menu needs: a "Source" choice per screen (Hall
 broadcast / Web page), and for the web page a way to give an address - the

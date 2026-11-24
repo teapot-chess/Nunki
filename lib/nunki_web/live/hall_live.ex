@@ -49,6 +49,7 @@ defmodule NunkiWeb.HallLive do
        chosen: setting["tournament"],
        source: setting["source"],
        url: setting["url"],
+       boards: setting["boards"],
        identify?: false,
        ticking?: false
      )
@@ -71,7 +72,8 @@ defmodule NunkiWeb.HallLive do
           mode: setting["mode"],
           chosen: setting["tournament"],
           source: setting["source"],
-          url: setting["url"]
+          url: setting["url"],
+          boards: setting["boards"]
         )
       end
 
@@ -147,7 +149,8 @@ defmodule NunkiWeb.HallLive do
         mode: setting["mode"],
         chosen: setting["tournament"],
         source: setting["source"],
-        url: setting["url"]
+        url: setting["url"],
+        boards: setting["boards"]
       )
 
     reload? =
@@ -193,94 +196,43 @@ defmodule NunkiWeb.HallLive do
   # keeps it out of LiveView's way (phx-update="ignore"); the id carries the
   # address, so a new address is a new element and a new frame, at once.
   def render(%{source: "web", url: url} = assigns) when is_binary(url) do
-    assigns = assign(assigns, :frame_id, "hall-web-frame-#{:erlang.phash2(url)}")
+    ~H"""
+    <Layouts.hall flash={@flash}>
+      <.web_frame id="hall-web" url={@url} screen={@screen} identify?={@identify?} />
+    </Layouts.hall>
+    """
+  end
+
+  # The live boards of the tournament this screen shows, on OpenResults (its
+  # address came with the tournament, `Nunki.Link`): framed exactly like a
+  # web page. Without an address (nothing joined, or the tournament is not
+  # published) the screen says so, large, and takes the boards by itself as
+  # soon as the address is known.
+  def render(%{source: "boards"} = assigns) do
+    assigns =
+      assign(
+        assigns,
+        :boards_url,
+        Hall.boards_url(assigns.tournament && assigns.tournament["results"], assigns.boards)
+      )
 
     ~H"""
     <Layouts.hall flash={@flash}>
-      <div id="hall-web" class="hall-web" data-screen={@screen} data-url={@url}>
-        <div
-          id={@frame_id}
-          class="hall-web-host"
-          phx-hook=".WebPage"
-          phx-update="ignore"
-          data-url={@url}
-          data-waiting={gettext("Waiting for the page; trying again")}
-        >
+      <%= if @boards_url do %>
+        <.web_frame id="hall-web" url={@boards_url} screen={@screen} identify?={@identify?} />
+      <% else %>
+        <div id="hall-boards-missing" class="hall-boards-missing" data-screen={@screen} lang={@lang}>
+          <.logo class="hall-idle-mark" />
+          <p>
+            <%= if @tournament do %>
+              {gettext("Live boards: %{name} is not published on OpenResults", name: @name)}
+            <% else %>
+              {gettext("Live boards: no tournament joined yet.")}
+            <% end %>
+          </p>
+          <.identify :if={@identify?} screen={@screen} />
         </div>
-        <.identify :if={@identify?} screen={@screen} />
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".WebPage">
-          // The address is shown in a frame. A frame cannot say it failed to
-          // load (that is a browser error page, in a box we may not read), so
-          // the address is asked for first: any answer at all, even an error
-          // page, means a server is there; no answer means it is not, and we
-          // try again. Once shown, it is asked again now and then, so a page
-          // that went away is covered and one that came back is reloaded.
-          export default {
-            mounted() {
-              this.url = this.el.dataset.url
-              this.frame = null
-              this.up = false
-              this.overlay = document.createElement("p")
-              this.overlay.className = "hall-web-wait"
-              this.overlay.setAttribute("role", "status")
-              this.overlay.textContent = this.el.dataset.waiting
-              this.overlay.hidden = true
-              this.el.append(this.overlay)
-              this.probe()
-            },
-            // A probe still on its way when the frame goes (black, the
-            // broadcast, a new address) must not come back and start the
-            // loop again on an element nobody sees: `gone` stops it, and the
-            // probe in flight is aborted.
-            destroyed() {
-              this.gone = true
-              clearTimeout(this.timer)
-              if (this.ctl) this.ctl.abort()
-            },
-            async probe() {
-              if (this.gone) return
-              let ok = false
-              try {
-                const ctl = new AbortController()
-                this.ctl = ctl
-                const t = setTimeout(() => ctl.abort(), 8000)
-                await fetch(this.url, { mode: "no-cors", cache: "no-store", signal: ctl.signal })
-                clearTimeout(t)
-                ok = true
-              } catch (_e) {
-                ok = false
-              }
-
-              if (this.gone) return
-
-              if (ok && !this.up) {
-                this.show()
-              } else if (!ok && this.up) {
-                this.overlay.hidden = false
-              }
-
-              if (!ok) this.overlay.hidden = false
-              this.up = ok
-              this.timer = setTimeout(() => this.probe(), ok ? 15000 : 5000)
-            },
-            show() {
-              if (this.frame) this.frame.remove()
-              const f = document.createElement("iframe")
-              f.className = "hall-web-frame"
-              f.src = this.url
-              f.setAttribute("referrerpolicy", "no-referrer")
-              f.setAttribute("allow", "fullscreen; autoplay")
-              f.setAttribute(
-                "sandbox",
-                "allow-scripts allow-same-origin allow-forms allow-popups"
-              )
-              this.el.prepend(f)
-              this.frame = f
-              this.overlay.hidden = true
-            }
-          }
-        </script>
-      </div>
+      <% end %>
     </Layouts.hall>
     """
   end
@@ -377,6 +329,102 @@ defmodule NunkiWeb.HallLive do
         </footer>
       </div>
     </Layouts.hall>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :url, :string, required: true
+  attr :screen, :string, required: true
+  attr :identify?, :boolean, default: false
+
+  defp web_frame(assigns) do
+    assigns = assign(assigns, :frame_id, "hall-web-frame-#{:erlang.phash2(assigns.url)}")
+
+    ~H"""
+    <div id={@id} class="hall-web" data-screen={@screen} data-url={@url}>
+      <div
+        id={@frame_id}
+        class="hall-web-host"
+        phx-hook=".WebPage"
+        phx-update="ignore"
+        data-url={@url}
+        data-waiting={gettext("Waiting for the page; trying again")}
+      >
+      </div>
+      <.identify :if={@identify?} screen={@screen} />
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".WebPage">
+        // The address is shown in a frame. A frame cannot say it failed to
+        // load (that is a browser error page, in a box we may not read), so
+        // the address is asked for first: any answer at all, even an error
+        // page, means a server is there; no answer means it is not, and we
+        // try again. Once shown, it is asked again now and then, so a page
+        // that went away is covered and one that came back is reloaded.
+        export default {
+          mounted() {
+            this.url = this.el.dataset.url
+            this.frame = null
+            this.up = false
+            this.overlay = document.createElement("p")
+            this.overlay.className = "hall-web-wait"
+            this.overlay.setAttribute("role", "status")
+            this.overlay.textContent = this.el.dataset.waiting
+            this.overlay.hidden = true
+            this.el.append(this.overlay)
+            this.probe()
+          },
+          // A probe still on its way when the frame goes (black, the
+          // broadcast, a new address) must not come back and start the
+          // loop again on an element nobody sees: `gone` stops it, and the
+          // probe in flight is aborted.
+          destroyed() {
+            this.gone = true
+            clearTimeout(this.timer)
+            if (this.ctl) this.ctl.abort()
+          },
+          async probe() {
+            if (this.gone) return
+            let ok = false
+            try {
+              const ctl = new AbortController()
+              this.ctl = ctl
+              const t = setTimeout(() => ctl.abort(), 8000)
+              await fetch(this.url, { mode: "no-cors", cache: "no-store", signal: ctl.signal })
+              clearTimeout(t)
+              ok = true
+            } catch (_e) {
+              ok = false
+            }
+
+            if (this.gone) return
+
+            if (ok && !this.up) {
+              this.show()
+            } else if (!ok && this.up) {
+              this.overlay.hidden = false
+            }
+
+            if (!ok) this.overlay.hidden = false
+            this.up = ok
+            this.timer = setTimeout(() => this.probe(), ok ? 15000 : 5000)
+          },
+          show() {
+            if (this.frame) this.frame.remove()
+            const f = document.createElement("iframe")
+            f.className = "hall-web-frame"
+            f.src = this.url
+            f.setAttribute("referrerpolicy", "no-referrer")
+            f.setAttribute("allow", "fullscreen; autoplay")
+            f.setAttribute(
+              "sandbox",
+              "allow-scripts allow-same-origin allow-forms allow-popups"
+            )
+            this.el.prepend(f)
+            this.frame = f
+            this.overlay.hidden = true
+          }
+        }
+      </script>
+    </div>
     """
   end
 

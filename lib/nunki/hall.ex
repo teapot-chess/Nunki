@@ -26,6 +26,14 @@ defmodule Nunki.Hall do
   `black` still blacks a web page out; `paused` cannot freeze somebody
   else's page and leaves it alone. Addresses are checked by `check_url/1`.
 
+  The third source is `"boards"`: the live boards of the tournament the
+  screen shows (its own choice, else the automatic pick), from that
+  tournament's page on OpenResults, whose address OpenPairings tells Nunki
+  (`results`, kept by `Nunki.Link`). `"boards"` is the selection of boards
+  (`check_boards/1`; empty is all of them). It is kept, like the address,
+  when the screen goes to another source. `boards_url/2` is what the screen
+  then frames; it is nil while the tournament has no OpenResults address.
+
   ## Sound
 
   On or off. Off means nothing is said at all - not queued, not saved for
@@ -41,7 +49,10 @@ defmodule Nunki.Hall do
 
   @screens ~w(hdmi1 hdmi2)
   @modes ~w(live paused black)
-  @sources ~w(hall web)
+  @sources ~w(hall web boards)
+  @max_boards 100
+  @max_board_items 20
+  @max_board_number 999
   @identify_ms 5_000
 
   @doc "The screens there are."
@@ -67,6 +78,12 @@ defmodule Nunki.Hall do
   defp stored_screens(_other), do: %{}
 
   defp normalize(%{} = s) do
+    boards =
+      case is_binary(s["boards"]) && check_boards(s["boards"]) do
+        {:ok, ok} -> ok
+        _none -> ""
+      end
+
     url =
       case is_binary(s["url"]) && check_url(s["url"]) do
         {:ok, url} -> url
@@ -76,24 +93,37 @@ defmodule Nunki.Hall do
     %{
       "mode" => if(s["mode"] in @modes, do: s["mode"], else: "live"),
       "tournament" => if(is_binary(s["tournament"]), do: s["tournament"]),
-      "source" => if(s["source"] == "web" and url, do: "web", else: "hall"),
-      "url" => url
+      "source" => source(s["source"], url),
+      "url" => url,
+      "boards" => boards
     }
   end
 
   defp normalize(_none),
-    do: %{"mode" => "live", "tournament" => nil, "source" => "hall", "url" => nil}
+    do: %{
+      "mode" => "live",
+      "tournament" => nil,
+      "source" => "hall",
+      "url" => nil,
+      "boards" => ""
+    }
+
+  defp source("web", url) when is_binary(url), do: "web"
+  defp source("boards", _url), do: "boards"
+  defp source(_other, _url), do: "hall"
 
   @doc "The sources a screen can have."
   def sources, do: @sources
 
   @doc """
-  Sets what a screen shows: `"hall"` (the broadcast) or `"web"` with an
-  address. `"web"` without an address uses the one the screen already has.
-  `:ok`, or `{:error, :screen | :source | :no_url | {:url, reason}}`, the
-  reason being one of `check_url/1`'s.
+  Sets what a screen shows: `"hall"` (the broadcast), `"web"` with an
+  address, or `"boards"` with a selection of boards. `"web"` without an
+  address uses the one the screen already has; so does `"boards"` without a
+  selection (nil), while a given selection (even `""`, all boards) is kept.
+  `:ok`, or `{:error, :screen | :source | :no_url | :boards | {:url, reason}}`,
+  the reason being one of `check_url/1`'s.
   """
-  def put_source(name, source, url \\ nil) do
+  def put_source(name, source, url \\ nil, boards \\ nil) do
     cond do
       name not in @screens ->
         {:error, :screen}
@@ -103,6 +133,13 @@ defmodule Nunki.Hall do
 
       source == "hall" ->
         change(name, &Map.put(&1, "source", "hall"))
+
+      source == "boards" ->
+        case if(is_nil(boards), do: {:ok, nil}, else: check_boards(boards)) do
+          {:ok, nil} -> change(name, &Map.put(&1, "source", "boards"))
+          {:ok, ok} -> change(name, &Map.merge(&1, %{"source" => "boards", "boards" => ok}))
+          {:error, _why} -> {:error, :boards}
+        end
 
       true ->
         url = if is_binary(url) and String.trim(url) != "", do: url, else: screen(name)["url"]
@@ -114,6 +151,54 @@ defmodule Nunki.Hall do
         end
     end
   end
+
+  @doc """
+  Whether a selection of boards is acceptable: `{:ok, selection}` (spaces
+  taken out) or `{:error, :boards}`. Empty is all of them; otherwise
+  comma-separated items, each `N` or `N-M` with 1 <= N <= M <= 999; at most
+  20 items, at most 100 characters.
+  """
+  def check_boards(boards) when is_binary(boards) do
+    if String.length(boards) > @max_boards do
+      {:error, :boards}
+    else
+      selection = String.replace(boards, ~r/\s+/u, "")
+      items = if selection == "", do: [], else: String.split(selection, ",")
+
+      if length(items) <= @max_board_items and Enum.all?(items, &board_item?/1),
+        do: {:ok, selection},
+        else: {:error, :boards}
+    end
+  end
+
+  def check_boards(_other), do: {:error, :boards}
+
+  defp board_item?(item) do
+    case Regex.run(~r/\A(\d{1,3})(?:-(\d{1,3}))?\z/, item) do
+      [_, n] ->
+        board_number?(n)
+
+      [_, n, m] ->
+        board_number?(n) and board_number?(m) and String.to_integer(n) <= String.to_integer(m)
+
+      nil ->
+        false
+    end
+  end
+
+  defp board_number?(text), do: String.to_integer(text) in 1..@max_board_number//1
+
+  @doc """
+  What a screen with the `boards` source frames: the tournament's live boards
+  on OpenResults (following its current round, chrome hidden), cut to the
+  selection. Nil without a results address.
+  """
+  def boards_url(results, boards) when is_binary(results) and results != "" do
+    base = String.trim_trailing(results, "/") <> "/live/current/projector?kiosk=1"
+    if is_binary(boards) and boards != "", do: base <> "&boards=" <> boards, else: base
+  end
+
+  def boards_url(_none, _boards), do: nil
 
   @max_url 2_000
 

@@ -15,6 +15,13 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-25
+
+- [Feature] **A screen can show the live boards of its tournament, boards 1-4 on one monitor and 5-10 on the other.** A third source next to the broadcast and the web page: `boards`, with a selection (`1-4`, `5-10`, `1,3,7`, `1-3,7`; empty is all of them). The screen frames the tournament's page on OpenResults, which follows the current round by itself, so the arbiter no longer pastes a different address after every pairing. The control page has a "Live boards" button and a field for the boards. Tournament, mode, reconnecting frame and black all work as they do for a web page, and the selection is kept when the screen goes back to the broadcast.
+- [Feature] **Nunki learns where a tournament is published.** OpenPairings now tells the hall link the tournament's OpenResults front page (`results`, in `welcome` and with every `round`), or `null` when it is not public; Nunki keeps it per tournament and shows it in the local API. A screen on live boards whose tournament is not published says so in letters a back row can read, and takes the boards by itself the moment the address arrives. A tournament that goes public later reaches the screens without anybody pressing anything, which is the whole idea. The contract (hall-link-v1) documents the optional field; an older OpenPairings simply never sends it and nothing changes.
+- [Feature] **Local API: `source: "boards"`, `boards`, `boards_url`, `results`.** `POST /screen_source` takes `{"source": "boards", "boards": "5-10"}` (a selection that is not one is a 422 with a sentence); each screen in the state has `boards` and `boards_url`, each tournament `results`. All additive: nothing that exists changed its meaning. `docs/local-api.md` has the details, and the manual (English and Dutch) the human version.
+- [Change] **The OpenPairings plug-in is 0.9.0 and sends `results`.** The hosted edition needs the new plug-in for the address to arrive; without it the live boards screen waits politely.
+
 ## [0.8.2] - 2026-11-24
 - [Security] **db_connection 2.10.3.** A fresh advisory (EEF-CVE-2026-133555) against 2.10.2; the dependency audit noticed before anyone else had to.
 

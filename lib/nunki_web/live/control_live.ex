@@ -48,6 +48,7 @@ defmodule NunkiWeb.ControlLive do
        drafts: %{},
        web_edit: MapSet.new(),
        web_errors: %{},
+       boards_errors: %{},
        ticking?: false,
        pin_error: nil,
        pin_form: to_form(%{"pin" => ""}, as: :pin)
@@ -107,7 +108,13 @@ defmodule NunkiWeb.ControlLive do
         source: s["source"],
         url: s["url"],
         web?: s["source"] == "web",
-        editing?: s["source"] == "web" or MapSet.member?(assigns.web_edit, name),
+        boards?: s["source"] == "boards",
+        boards: s["boards"],
+        boards_error: assigns.boards_errors[name],
+        results: shown && shown["results"],
+        editing?:
+          s["source"] == "web" or
+            (s["source"] != "boards" and MapSet.member?(assigns.web_edit, name)),
         url_error: assigns.web_errors[name],
         shown_name: shown && get_in(shown, ["tournament", "name"]),
         round: payload && payload["round"],
@@ -365,6 +372,30 @@ defmodule NunkiWeb.ControlLive do
       {:error, _no_url_yet} ->
         edit = MapSet.put(socket.assigns.web_edit, screen)
         {:noreply, socket |> assign(web_edit: edit) |> load()}
+    end
+  end
+
+  # Live boards: the tournament's boards on OpenResults, with the selection the
+  # screen already has (the form below the buttons changes it).
+  def handle_event("screen_source", %{"screen" => screen, "source" => "boards"}, socket) do
+    Hall.put_source(screen, "boards")
+    {:noreply, socket |> forget_web_edit(screen) |> load()}
+  end
+
+  def handle_event("screen_boards", %{"screen" => screen, "boards" => boards}, socket) do
+    case Hall.put_source(screen, "boards", nil, boards) do
+      :ok ->
+        {:noreply, socket |> forget_web_edit(screen) |> load()}
+
+      {:error, _why} ->
+        errors =
+          Map.put(
+            socket.assigns.boards_errors,
+            screen,
+            gettext("Boards like 1-4, 5-10 or 1-3,7, or leave it empty for all of them.")
+          )
+
+        {:noreply, socket |> assign(boards_errors: errors) |> load()}
     end
   end
 
@@ -637,6 +668,11 @@ defmodule NunkiWeb.ControlLive do
                 <% s.web? -> %>
                   <span class="preview-label">{gettext("Web page")}</span>
                   <span class="preview-clock preview-host">{source_host(s.url)}</span>
+                <% s.boards? -> %>
+                  <span class="preview-label">{gettext("Live boards")}</span>
+                  <span class="preview-clock preview-host">
+                    {if s.results, do: source_host(s.results), else: gettext("not published")}
+                  </span>
                 <% s.countdown && !s.countdown.started? -> %>
                   <span class="preview-label">
                     {gettext("Round %{round} starts in", round: s.countdown.round)}
@@ -652,7 +688,7 @@ defmodule NunkiWeb.ControlLive do
                 <% true -> %>
                   <span class="preview-label">{gettext("Waiting for the pairings.")}</span>
               <% end %>
-              <span :if={s.shown_name && !s.web?} class="preview-name">{s.shown_name}</span>
+              <span :if={s.shown_name && !s.web? && !s.boards?} class="preview-name">{s.shown_name}</span>
               <span :if={s.mode == "paused"} class="preview-badge">{gettext("Paused")}</span>
             </div>
 
@@ -677,14 +713,14 @@ defmodule NunkiWeb.ControlLive do
             </div>
 
             <div
-              class="segmented segmented-two"
+              class="segmented segmented-three"
               role="group"
               aria-label={gettext("What screen %{number} shows", number: s.number)}
             >
               <button
                 id={"screen-#{s.name}-source-hall"}
                 type="button"
-                aria-pressed={to_string(!s.editing?)}
+                aria-pressed={to_string(!s.editing? and !s.boards?)}
                 class="seg seg-hall"
                 phx-click="screen_source"
                 phx-value-screen={s.name}
@@ -705,7 +741,59 @@ defmodule NunkiWeb.ControlLive do
                 <.icon name="expand" />
                 <span>{gettext("Web page")}</span>
               </button>
+              <button
+                id={"screen-#{s.name}-source-boards"}
+                type="button"
+                aria-pressed={to_string(s.boards?)}
+                class="seg seg-boards"
+                phx-click="screen_source"
+                phx-value-screen={s.name}
+                phx-value-source="boards"
+              >
+                <.icon name="screen" />
+                <span>{gettext("Live boards")}</span>
+              </button>
             </div>
+
+            <form
+              :if={s.boards?}
+              id={"screen-#{s.name}-boards-form"}
+              class="screen-web"
+              phx-submit="screen_boards"
+            >
+              <input type="hidden" name="screen" value={s.name} />
+              <div class="screen-web-row">
+                <.input
+                  id={"screen-#{s.name}-boards"}
+                  type="text"
+                  name="boards"
+                  value={s.boards || ""}
+                  label={gettext("Boards")}
+                  placeholder="1-4"
+                  autocomplete="off"
+                />
+                <.button id={"screen-#{s.name}-boards-show"} type="submit">
+                  {gettext("Show")}
+                </.button>
+              </div>
+              <p
+                :if={s.boards_error}
+                id={"screen-#{s.name}-boards-error"}
+                class="screen-web-error"
+                role="alert"
+              >
+                {s.boards_error}
+              </p>
+              <p id={"screen-#{s.name}-boards-status"} class="note">
+                <%= if s.results do %>
+                  {gettext("The tournament is on OpenResults: %{host}", host: source_host(s.results))}
+                <% else %>
+                  {gettext(
+                    "This tournament has no OpenResults address (it is not published there), so the screen says so."
+                  )}
+                <% end %>
+              </p>
+            </form>
 
             <form
               :if={s.editing?}
@@ -1183,7 +1271,8 @@ defmodule NunkiWeb.ControlLive do
   defp forget_web_edit(socket, screen) do
     assign(socket,
       web_edit: MapSet.delete(socket.assigns.web_edit, screen),
-      web_errors: Map.delete(socket.assigns.web_errors, screen)
+      web_errors: Map.delete(socket.assigns.web_errors, screen),
+      boards_errors: Map.delete(socket.assigns.boards_errors, screen)
     )
   end
 
