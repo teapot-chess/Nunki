@@ -31,7 +31,7 @@ defmodule OpenPairingsNunki.Protocol do
   nil when it is not public: sent either way (null tells the device to forget
   an address it had; a key that is absent would tell it nothing).
   """
-  def welcome(server, tournament, results \ nil),
+  def welcome(server, tournament, results \\ nil),
     do: %{
       type: "welcome",
       v: @version,
@@ -43,7 +43,7 @@ defmodule OpenPairingsNunki.Protocol do
     do: %{type: "refused", reason: reason}
 
   @doc "The round, with the tournament's `results` address beside it (see `welcome/3`)."
-  def round(payload, results \ nil), do: %{type: "round", round: payload, results: results}
+  def round(payload, results \\ nil), do: %{type: "round", round: payload, results: results}
 
   def leave, do: %{type: "leave"}
 
