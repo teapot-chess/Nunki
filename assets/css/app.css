@@ -392,7 +392,6 @@ p { margin: 0.25rem 0; }
 
 .screen-pick .field select { min-height: 44px; }
 
-.segmented-two { grid-template-columns: repeat(2, 1fr); }
 .segmented-three { grid-template-columns: repeat(3, 1fr); }
 .seg-hall[aria-pressed="true"], .seg-web[aria-pressed="true"], .seg-boards[aria-pressed="true"] { background: var(--accent); }
 .screen-web { display: grid; gap: 8px; }

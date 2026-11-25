@@ -15,6 +15,8 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+- [Removed] **A stylesheet rule for a two-button row that does not exist.** Nothing was ever styled by it. The rest of the sweep for dead code and slow paths found nothing to remove or speed up.
+
 ## [0.9.1] - 2026-11-25
 
 - [Fix] **"Web page" did nothing on a screen showing live boards that had no address yet.** The button set the address field to open, and the control page then declined to draw it because the screen was still on boards: a click, no reaction, no way forward but to switch to the broadcast first. The field now opens, the boards form steps aside, and the screen keeps showing boards until an address is actually sent.
