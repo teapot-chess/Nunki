@@ -15,6 +15,10 @@ tagged so that a version can be skimmed:
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-25
+
+- [Fix] **"Web page" did nothing on a screen showing live boards that had no address yet.** The button set the address field to open, and the control page then declined to draw it because the screen was still on boards: a click, no reaction, no way forward but to switch to the broadcast first. The field now opens, the boards form steps aside, and the screen keeps showing boards until an address is actually sent.
+
 ## [0.9.0] - 2026-11-25
 
 - [Feature] **A screen can show the live boards of its tournament, boards 1-4 on one monitor and 5-10 on the other.** A third source next to the broadcast and the web page: `boards`, with a selection (`1-4`, `5-10`, `1,3,7`, `1-3,7`; empty is all of them). The screen frames the tournament's page on OpenResults, which follows the current round by itself, so the arbiter no longer pastes a different address after every pairing. The control page has a "Live boards" button and a field for the boards. Tournament, mode, reconnecting frame and black all work as they do for a web page, and the selection is kept when the screen goes back to the broadcast.

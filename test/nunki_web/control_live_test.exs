@@ -553,6 +553,20 @@ defmodule NunkiWeb.ControlLiveTest do
       refute has_element?(view, "#screen-hdmi2-boards-form")
     end
 
+    test "Web page opens its address field from a live boards screen that has no address yet" do
+      tournament()
+      {:ok, view, _html} = live(local_conn(), "/")
+
+      view |> element("#screen-hdmi2-source-boards") |> render_click()
+      assert has_element?(view, "#screen-hdmi2-boards-form")
+
+      view |> element("#screen-hdmi2-source-web") |> render_click()
+      assert has_element?(view, "#screen-hdmi2-web-form")
+      refute has_element?(view, "#screen-hdmi2-boards-form")
+      assert has_element?(view, "#screen-hdmi2-source-web[aria-pressed=true]")
+      assert Nunki.Hall.screen("hdmi2")["source"] == "boards"
+    end
+
     test "the sound switch: off says so plainly, and nothing is said" do
       {:ok, view, _html} = live(local_conn(), "/")
       view |> element("#audio-toggle") |> render_click()

@@ -112,9 +112,7 @@ defmodule NunkiWeb.ControlLive do
         boards: s["boards"],
         boards_error: assigns.boards_errors[name],
         results: shown && shown["results"],
-        editing?:
-          s["source"] == "web" or
-            (s["source"] != "boards" and MapSet.member?(assigns.web_edit, name)),
+        editing?: s["source"] == "web" or MapSet.member?(assigns.web_edit, name),
         url_error: assigns.web_errors[name],
         shown_name: shown && get_in(shown, ["tournament", "name"]),
         round: payload && payload["round"],
@@ -744,7 +742,7 @@ defmodule NunkiWeb.ControlLive do
               <button
                 id={"screen-#{s.name}-source-boards"}
                 type="button"
-                aria-pressed={to_string(s.boards?)}
+                aria-pressed={to_string(s.boards? and !s.editing?)}
                 class="seg seg-boards"
                 phx-click="screen_source"
                 phx-value-screen={s.name}
@@ -756,7 +754,7 @@ defmodule NunkiWeb.ControlLive do
             </div>
 
             <form
-              :if={s.boards?}
+              :if={s.boards? and !s.editing?}
               id={"screen-#{s.name}-boards-form"}
               class="screen-web"
               phx-submit="screen_boards"
